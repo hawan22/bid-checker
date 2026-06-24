@@ -518,6 +518,16 @@
         </summary>
         <div class="section-body" id="formatResults"><div class="empty">请先上传文件</div></div>
       </details>
+
+      <details id="sec-preview" class="section">
+        <summary>
+          <div class="summary-left"><span class="summary-icon">📝</span><span>文字预览</span></div>
+          <span class="summary-badge badge-neutral">原文</span>
+        </summary>
+        <div class="section-body">
+          <div id="textPreviewBox" class="preview-box">上传文件后自动显示提取的文字内容</div>
+        </div>
+      </details>
     </section>
 
     <div class="footer-note">关闭页面即清空本地内存中的提取内容 · 建议最终仍人工复核签章页、报价页、资格页</div>
@@ -1084,8 +1094,7 @@
         }
         html += '</tbody></table></div>';
       }
-      html += '<h4 style="margin-top:12px;">文字预览（前 800 字）</h4>';
-      html += '<div class="preview-box">' + escapeHtml((APP_STATE.extractedText || '未提取到文字').slice(0, 800)) + '</div>';
+      html += '<div id="docSummary" style="margin-top:12px;"><div class="banner banner-info">扫描完成后将在此显示总结…</div></div>';
       byId('docResults').innerHTML = html;
       setBadge('badge-doc', pageLabel, APP_STATE.currentFileType === 'docx' ? 'badge-info' : 'badge-success');
     }
@@ -1477,6 +1486,85 @@
       setBadge('badge-format', badgeText, badgeCls);
     }
 
+    function updateDocSummary() {
+      var lines = [];
+
+      // 废标风险
+      var risk = APP_STATE.scanResults;
+      if (risk) {
+        var riskHigh = risk.summary['高'], riskMid = risk.summary['中'], riskTip = risk.summary['提示'];
+        if (riskHigh > 0) {
+          lines.push('🔴 废标风险：' + riskHigh + ' 个高风险关键词');
+        } else if (riskMid > 0) {
+          lines.push('🟠 废标风险：' + riskMid + ' 个中风险关键词' + (riskTip > 0 ? '，' + riskTip + ' 个提示' : ''));
+        } else {
+          lines.push('✅ 废标风险：未发现问题关键词');
+        }
+      }
+
+      // 有效期
+      var exp = APP_STATE.expiryResults;
+      if (exp) {
+        var expired = 0, urgent = 0, warn = 0, valid = 0;
+        for (var i = 0; i < exp.items.length; i++) {
+          var s = exp.items[i].status;
+          if (s === 'expired') expired++;
+          else if (s === 'urgent') urgent++;
+          else if (s === 'soon') warn++;
+          else valid++;
+        }
+        if (expired > 0) {
+          lines.push('🔴 有效期：' + expired + ' 个已过期' + (urgent > 0 ? '，' + urgent + ' 个即将到期' : ''));
+        } else if (urgent > 0) {
+          lines.push('🟠 有效期：' + urgent + ' 个即将到期（30天内）' + (warn > 0 ? '，' + warn + ' 个需关注' : ''));
+        } else if (warn > 0) {
+          lines.push('🟡 有效期：' + warn + ' 个需关注（90天内）');
+        } else {
+          lines.push('✅ 有效期：共检测 ' + exp.items.length + ' 个日期，全部有效');
+        }
+      }
+
+      // 价格
+      var price = APP_STATE.priceResults;
+      if (price) {
+        if (price.mismatchCount > 0) {
+          lines.push('⚠️ 价格大小写：' + price.mismatchCount + ' 组不一致，请核对');
+        } else if (price.matchCount > 0) {
+          lines.push('✅ 价格大小写：' + price.matchCount + ' 组一致');
+        } else if (price.totalFound > 0) {
+          lines.push('ℹ️ 价格：发现 ' + price.totalFound + ' 条金额，未能自动配对，请手动核对');
+        } else {
+          lines.push('ℹ️ 价格：未识别到金额，可手动填入下方校验区');
+        }
+      }
+
+      // 格式规范
+      var fmt = APP_STATE.formatResults;
+      if (fmt) {
+        var fmtIssues = (fmt.punctIssues || 0) + (fmt.dateFormats > 1 ? 1 : 0) + (fmt.missingFields || 0);
+        if (fmtIssues > 0) {
+          lines.push('🟠 格式规范：' + fmtIssues + ' 类问题（标点/日期/必填字段）');
+        } else {
+          lines.push('✅ 格式规范：未发现明显问题');
+        }
+      }
+
+      var el = document.getElementById('docSummary');
+      if (!el) return;
+      if (!lines.length) {
+        el.innerHTML = '<div class="banner banner-info">检查完成</div>';
+        return;
+      }
+      var hasProblem = lines.some(function(l) { return l.charAt(0) === '🔴' || l.charAt(0) === '⚠'; });
+      var hasWarn = lines.some(function(l) { return l.charAt(0) === '🟠' || l.charAt(0) === '🟡'; });
+      var cls = hasProblem ? 'banner-danger' : (hasWarn ? 'banner-warning' : 'banner-success');
+      var html = '<div class="banner ' + cls + '" style="line-height:1.9;">';
+      html += '<strong>📊 扫描总结</strong><br>';
+      html += lines.map(function(l) { return escapeHtml(l); }).join('<br>');
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
     function runAllChecks() {
       setProgress(72, '正在整理文档信息…', '第 1/5 项', true);
       renderDocInfo();
@@ -1499,6 +1587,9 @@
 
       openAllSections();
       byId('resultsSection').classList.remove('hidden');
+      updateDocSummary();
+      var previewEl = byId('textPreviewBox');
+      if (previewEl) { previewEl.textContent = (APP_STATE.extractedText || '未提取到文字').slice(0, 1000); }
       setProgress(100, '扫描完成', '已自动完成全部 5 项检查', false);
     }
 
