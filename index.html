@@ -535,7 +535,8 @@
       currentFileType: '',
       totalPages: 0,
       totalPagesLabel: '',
-      imagePreviewUrl: ''
+      imagePreviewUrl: '',
+      fileSize: 0
     };
 
     var KEYWORD_DB = [
@@ -681,10 +682,18 @@
       APP_STATE.totalPages = 0;
       APP_STATE.totalPagesLabel = '';
       APP_STATE.imagePreviewUrl = '';
+      APP_STATE.fileSize = file && file.size ? file.size : 0;
       clearManualInputs();
       setEmptyState();
       byId('resultsSection').classList.add('hidden');
       byId('uploadHint').textContent = '当前文件：' + APP_STATE.fileName;
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '—';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     }
 
     function getSnippet(text, index, len) {
@@ -1060,7 +1069,7 @@
       html += '<div class="stat-box"><div class="stat-label">文件名</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.fileName || '-') + '</div></div>';
       html += '<div class="stat-box"><div class="stat-label">页数</div><div class="stat-value">' + escapeHtml(pageLabel) + '</div></div>';
       html += '<div class="stat-box"><div class="stat-label">字符数</div><div class="stat-value">' + charTotal + '</div></div>';
-      html += '<div class="stat-box"><div class="stat-label">文字来源</div><div class="stat-value" style="font-size:15px;">' + escapeHtml((APP_STATE.currentFileType || '-').toUpperCase()) + '</div></div>';
+      html += '<div class="stat-box"><div class="stat-label">文件大小</div><div class="stat-value" style="font-size:15px;">' + formatFileSize(APP_STATE.fileSize) + '</div></div>';
       html += '</div>';
       if (APP_STATE.currentFileType === 'docx') {
         html += '<p class="muted small">DOCX 无法直接读取真实分页，按约 500 个中文字符 / 页估算。</p>';
