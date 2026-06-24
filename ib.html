@@ -171,6 +171,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
             <th class="num">当月FC</th>
             <th>客户需求量</th>
             <th>FC对比</th>
+            <th>Remark</th>
           </tr>
         </thead>
         <tbody id="result-body"></tbody>
@@ -423,6 +424,9 @@ function doSearch() {
         </td>
         <td class="fc-cell" id="fcc-${art}">
           <span class="fc-pending">填写数量后显示</span>
+        </td>
+        <td class="fc-cell" id="rmk-${art}">
+          <span class="fc-pending">—</span>
         </td>`;
     }
     tbody.appendChild(tr);
@@ -444,27 +448,92 @@ function doSearch() {
 }
 
 // ═══════════════════════════════════════════════════════
-// FC comparison
+// Remark logic
 // ═══════════════════════════════════════════════════════
+function calcRemark(prod, qty, fc) {
+  if (!prod || isNaN(qty) || qty <= 0) return '';
+  const ava    = prod.ava    != null ? prod.ava    : 0;
+  const onway  = prod.in_transit != null ? prod.in_transit : 0;
+  const ews    = prod.ews    != null ? prod.ews    : 0;
+  const lt     = prod.lt     != null ? prod.lt     : 0;
+  const ewsLT  = ews * lt;
+  const monthlyFC = fc ? fc.total : null;
+  const exceedsFC = monthlyFC && qty > monthlyFC * 1.1;
+
+  if (exceedsFC) {
+    if (ava < qty) {
+      return '<span style="color:#E00751;font-weight:700">⚠️ 咨询SO</span>';
+    } else {
+      return (ava - qty) - ewsLT > 1
+        ? '<span style="color:#00853E;font-weight:700">✅ 直接拿货</span>'
+        : '<span style="color:#7A5800;font-weight:700">🔍 单独找HFB看</span>';
+    }
+  } else {
+    if (ava - qty + onway > ewsLT) {
+      return ava >= qty
+        ? '<span style="color:#00853E;font-weight:700">✅ 直接拿货</span>'
+        : '<span style="color:#0058A3;font-weight:700">⏳ 等到货</span>';
+    } else {
+      return '<span style="color:#7A0096;font-weight:700">📦 额外订货</span>';
+    }
+  }
+}
+
+function updateAutoDeliveryDate() {
+  // Find max LT among items that need ordering/SO consultation
+  let maxLT = 0;
+  document.querySelectorAll('.qty-input').forEach(inp => {
+    const qty = parseFloat(inp.value);
+    if (isNaN(qty) || qty <= 0) return;
+    const art = inp.dataset.art;
+    const res = RESULTS.find(r => r.art === art);
+    if (!res || !res.prod) return;
+    const remark = calcRemark(res.prod, qty, res.fc);
+    // Items that need lead time: SO / 等到货 / 额外订货
+    if (remark.includes('咨询SO') || remark.includes('等到货') || remark.includes('额外订货')) {
+      const lt = res.prod.lt || 0;
+      if (lt > maxLT) maxLT = lt;
+    }
+  });
+  const el = document.getElementById('f-reqdate');
+  if (!el) return;
+  if (maxLT > 0) {
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + Math.ceil(maxLT * 7));
+    const iso = minDate.toISOString().slice(0, 10);
+    el.min = iso;
+    if (!el.value || el.value < iso) el.value = iso;
+  } else {
+    el.min = new Date().toISOString().slice(0, 10);
+  }
+}
+
+
 function onQtyChange(input) {
   const art = input.dataset.art;
   const fc = parseFloat(input.dataset.fc);
   const qty = parseFloat(input.value);
   const cell = document.getElementById('fcc-' + art);
+  const rmkCell = document.getElementById('rmk-' + art);
   if (!cell) return;
+
+  const res = RESULTS.find(r => r.art === art);
+  const prod = res ? res.prod : null;
+  const fcResult = res ? res.fc : null;
 
   if (isNaN(qty) || qty <= 0) {
     cell.innerHTML = '<span class="fc-pending">填写数量后显示</span>';
+    if (rmkCell) rmkCell.innerHTML = '<span class="fc-pending">—</span>';
   } else if (isNaN(fc) || fc <= 0) {
     cell.innerHTML = '<span class="fc-pending">无FC数据</span>';
+    if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, null);
   } else {
     const ratio = qty / fc;
     const pct = Math.round((ratio - 1) * 100);
     if (ratio > 1.1) {
       cell.innerHTML = `
         <div class="fc-warn-label">⚠️ 超FC +${pct}%</div>
-        <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>
-        <div style="font-size:11px;color:#E00751;margin-top:2px;font-weight:600">建议咨询 SO</div>`;
+        <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
     } else if (ratio >= 0.9) {
       cell.innerHTML = `
         <div class="fc-ok-label">✅ 正常</div>
@@ -474,9 +543,11 @@ function onQtyChange(input) {
         <div style="color:#0058A3;font-weight:700">低于FC ${Math.round((1-ratio)*100)}%</div>
         <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
     }
+    if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
   }
   refreshWarnBox();
   refreshSubmitPreview();
+  updateAutoDeliveryDate();
 }
 
 function refreshWarnBox() {
