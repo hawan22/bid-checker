@@ -336,28 +336,24 @@ function addArticle(artno) {
 // Search
 // ═══════════════════════════════════════════════════════
 function parseInput(raw) {
-  // Supports formats:
-  //   "80415595"             → {art, qty:null}
-  //   "80415595  5"          → {art, qty:5}    (space/tab separated, qty is small number)
-  //   "80415595,5"           → {art, qty:5}
-  //   "80415595\t5"          → {art, qty:5}
+  // Extracts first number (7-10 digits = article) and optional second number (qty)
+  // Handles any separator: single/multiple spaces, tab, comma, slash, etc.
   const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l);
   const seen = new Set();
   const items = [];
   for (const line of lines) {
-    // Split by tab, comma, or 2+ spaces
-    const parts = line.split(/\t|,|，|;|；|\s{2,}/).map(p => p.trim()).filter(p => p);
-    if (!parts.length) continue;
-    // First token must be a 7-10 digit number (article number)
-    const artRaw = parts[0].replace(/\D/g, '');
-    if (artRaw.length < 7 || artRaw.length > 10) continue;
+    const nums = line.match(/\d+/g) || [];
+    if (!nums.length) continue;
+    // First number sequence with 6-10 digits = article number
+    const artRaw = nums[0];
+    if (artRaw.length < 6 || artRaw.length > 10) continue;
     const art = artRaw.padStart(8, '0');
-    if (!/^\d{8}$/.test(art) || seen.has(art)) continue;
+    if (art.length !== 8 || seen.has(art)) continue;
     seen.add(art);
-    // Second token (if present) = quantity — only if it's a plausible small number
+    // Second number = quantity (if present and reasonable value < 1,000,000)
     let qty = null;
-    if (parts.length > 1) {
-      const qv = parseFloat(parts[1].replace(/[^\d.]/g, ''));
+    if (nums.length > 1) {
+      const qv = parseFloat(nums[1]);
       if (!isNaN(qv) && qv > 0 && qv < 1000000) qty = qv;
     }
     items.push({ art, qty });
