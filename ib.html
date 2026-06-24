@@ -183,7 +183,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
     <hr class="divider">
 
     <!-- 提交需求 -->
-    <div class="card-title">📬 提交采购需求</div>
+    <div class="card-title">📬 提交采购需求至 FIS 团队</div>
     <div id="submit-items-preview" class="submit-items">
       <div style="color:#aaa;font-size:13px">填写下方货号需求数量后，此处将显示提交明细</div>
     </div>
@@ -197,6 +197,10 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
         <input type="text" id="f-contact" placeholder="姓名">
       </div>
       <div class="fg">
+        <label>需求时间 *</label>
+        <input type="date" id="f-reqdate">
+      </div>
+      <div class="fg">
         <label>联系电话</label>
         <input type="tel" id="f-phone" placeholder="手机号码">
       </div>
@@ -205,12 +209,12 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
         <input type="email" id="f-email" placeholder="email@example.com">
       </div>
       <div class="fg full">
-        <label>备注（如交货时间、项目背景等）</label>
+        <label>备注（如项目背景、配送要求等）</label>
         <textarea id="f-notes" rows="2" placeholder="可选"></textarea>
       </div>
     </div>
     <button class="btn btn-blue" style="margin-top:14px;width:100%;max-width:220px" onclick="submitRequest()">
-      📤 提交需求至 IB 团队
+      📤 提交至 FIS 团队
     </button>
     <div id="submit-confirm" style="margin-top:10px"></div>
   </div>
@@ -556,7 +560,9 @@ function getSubmitItems() {
 function submitRequest() {
   const company = document.getElementById('f-company').value.trim();
   const contact = document.getElementById('f-contact').value.trim();
+  const reqdate = document.getElementById('f-reqdate').value.trim();
   if (!company || !contact) { alert('请填写客户公司名称和联系人'); return; }
+  if (!reqdate) { alert('请填写需求时间'); return; }
 
   const items = getSubmitItems();
   if (!items.length) { alert('请至少为一个货号填写需求数量'); return; }
@@ -567,12 +573,17 @@ function submitRequest() {
   const email = document.getElementById('f-email').value.trim();
   const notes = document.getElementById('f-notes').value.trim();
 
+  // Format reqdate as YYYY-MM-DD → 中文
+  const rd = new Date(reqdate + 'T00:00:00');
+  const reqdateCN = `${rd.getFullYear()}年${rd.getMonth()+1}月${rd.getDate()}日`;
+
   const lines = [
-    `【IB 采购需求提交】${dateStr}`,
-    `客户：${company}`,
+    `【IB 采购需求 - FIS团队】${dateStr}`,
+    `客户公司：${company}`,
     `联系人：${contact}`,
-    phone ? `电话：${phone}` : '',
-    email ? `邮件：${email}` : '',
+    `需求时间：${reqdateCN}`,
+    phone ? `联系电话：${phone}` : '',
+    email ? `电子邮件：${email}` : '',
     '',
     '需求明细：',
     ...items.map(it => {
@@ -584,7 +595,7 @@ function submitRequest() {
   ].filter(l => l !== undefined && l !== null);
 
   const body = lines.join('\n').replace(/\n\n+/g, '\n\n');
-  const subject = `IB采购需求 - ${company} - ${now.toLocaleDateString('zh-CN')}`;
+  const subject = `IB采购需求 - ${company} - 需求时间${reqdateCN}`;
 
   const mailto = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailto;
