@@ -186,10 +186,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
 
     <!-- 提交需求 -->
     <div class="card-title">📬 提交采购需求至 FIS 团队</div>
-    <div id="submit-items-preview" class="submit-items">
-      <div style="color:#aaa;font-size:13px">填写下方货号需求数量后，此处将显示提交明细</div>
-    </div>
-    <div class="form-grid" style="margin-top:12px">
+    <div class="form-grid" style="margin-top:8px">
       <div class="fg">
         <label>客户公司名称 *</label>
         <input type="text" id="f-company" placeholder="公司名称">
@@ -263,27 +260,36 @@ function isoWeekMonday(year, week) {
   return new Date(week1Mon + (week - 1) * 7 * 86400000);
 }
 
-function getMonthlyFC(artno, year, month) {
+function currentMonthFC(artno) {
   if (!DATA || !DATA.fc_weekly) return null;
   const fc = DATA.fc_weekly[artno] || DATA.fc_weekly[artno.replace(/^0+/, '')];
   if (!fc) return null;
+
+  // Current ISO week
+  const now = new Date();
+  const jan4 = Date.UTC(now.getFullYear(), 0, 4);
+  const jan4dow = new Date(jan4).getUTCDay() || 7;
+  const week1Mon = jan4 - (jan4dow - 1) * 86400000;
+  const curWk = Math.ceil((now - week1Mon) / (7 * 86400000)) + 1;
+  const curYr = now.getFullYear();
+
+  // Build target set: current week and 3 weeks back (4 weeks total)
+  const targets = new Set();
+  for (let i = 0; i < 4; i++) {
+    let wk = curWk - i;
+    let yr = curYr;
+    if (wk <= 0) { yr -= 1; wk += 52; }
+    targets.add(`${yr}${String(wk).padStart(2,'0')}`);
+  }
+
   let total = 0, count = 0;
   for (const [wk, val] of Object.entries(fc)) {
-    if (wk.length !== 6) continue;
-    const wy = parseInt(wk.slice(0, 4));
-    const wn = parseInt(wk.slice(4, 6));
-    const mon = isoWeekMonday(wy, wn);
-    if (mon.getUTCFullYear() === year && mon.getUTCMonth() + 1 === month) {
+    if (targets.has(wk)) {
       total += parseFloat(val) || 0;
       count++;
     }
   }
   return count > 0 ? { total: Math.round(total), weeks: count } : null;
-}
-
-function currentMonthFC(artno) {
-  const d = new Date();
-  return getMonthlyFC(artno, d.getFullYear(), d.getMonth() + 1);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -446,7 +452,6 @@ function doSearch() {
 
   document.getElementById('result-card').style.display = 'block';
   document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
-  refreshSubmitPreview();
   refreshWarnBox();
 }
 
@@ -549,7 +554,6 @@ function onQtyChange(input) {
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
   }
   refreshWarnBox();
-  refreshSubmitPreview();
   updateAutoDeliveryDate();
 }
 
@@ -576,24 +580,6 @@ function refreshWarnBox() {
   } else {
     box.innerHTML = '';
   }
-}
-
-function refreshSubmitPreview() {
-  const preview = document.getElementById('submit-items-preview');
-  const items = getSubmitItems();
-  if (!items.length) {
-    preview.innerHTML = '<div style="color:#aaa;font-size:13px">填写下方货号需求数量后，此处将显示提交明细</div>';
-    return;
-  }
-  preview.innerHTML = items.map(it => {
-    const warn = it.overFC ? `<span class="si-warn">超FC+${it.overFCPct}% ⚠️</span>` : '';
-    return `<div class="submit-item">
-      <span class="si-artno">${it.art}</span>
-      <span class="si-name">${it.name}</span>
-      <span class="si-qty">${it.qty.toLocaleString()} 件</span>
-      ${warn}
-    </div>`;
-  }).join('');
 }
 
 function getSubmitItems() {
