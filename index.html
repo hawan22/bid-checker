@@ -1505,18 +1505,16 @@
       // 有效期
       var exp = APP_STATE.expiryResults;
       if (exp) {
-        var expired = 0, urgent = 0, warn = 0, valid = 0;
+        var expired = 0, urgent = 0;
         for (var i = 0; i < exp.items.length; i++) {
-          var s = exp.items[i].status;
-          if (s === 'expired') expired++;
-          else if (s === 'urgent') urgent++;
-          else if (s === 'soon') warn++;
-          else valid++;
+          if (exp.items[i].diffDays < 0) expired++;
+          else if (exp.items[i].diffDays < 30) urgent++;
         }
+        var warn = exp.midCount || 0;
         if (expired > 0) {
-          lines.push('🔴 有效期：' + expired + ' 个已过期' + (urgent > 0 ? '，' + urgent + ' 个即将到期' : ''));
+          lines.push('🔴 有效期：' + expired + ' 个已过期' + (urgent > 0 ? '，' + urgent + ' 个即将到期（30天内）' : '') + (warn > 0 ? '，' + warn + ' 个90天内需关注' : ''));
         } else if (urgent > 0) {
-          lines.push('🟠 有效期：' + urgent + ' 个即将到期（30天内）' + (warn > 0 ? '，' + warn + ' 个需关注' : ''));
+          lines.push('🟠 有效期：' + urgent + ' 个即将到期（30天内）' + (warn > 0 ? '，' + warn + ' 个90天内需关注' : ''));
         } else if (warn > 0) {
           lines.push('🟡 有效期：' + warn + ' 个需关注（90天内）');
         } else {
