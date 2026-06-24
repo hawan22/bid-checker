@@ -8,198 +8,284 @@
   <title>标书CT扫描仪</title>
   <style>
     :root {
-      --primary: #1a1a2e;
-      --accent: #e94560;
-      --bg: #f4f6fb;
+      --bg: #f4f7fb;
       --card: #ffffff;
-      --text: #18202a;
+      --text: #172033;
       --muted: #667085;
-      --border: #dde3ee;
+      --border: #d8e1ee;
+      --primary: #1f3c88;
       --success: #16a34a;
-      --warning: #f59e0b;
+      --warning: #d97706;
       --danger: #dc2626;
       --info: #2563eb;
-      --shadow: 0 10px 30px rgba(26, 26, 46, 0.08);
-      --radius: 16px;
+      --success-soft: #eefcf2;
+      --warning-soft: #fff7ed;
+      --danger-soft: #fef2f2;
+      --info-soft: #eff6ff;
+      --shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
     }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      background: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
     }
-    body { padding-bottom: 86px; }
+    body { min-height: 100vh; }
     .app {
       width: 100%;
       max-width: 900px;
       margin: 0 auto;
-      padding: 0 12px 24px;
+      padding: 16px 12px 28px;
     }
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    .hero {
+      background: linear-gradient(135deg, #102a5c 0%, #1b4d9b 60%, #2563eb 100%);
       color: #fff;
-      margin: 0 -12px 12px;
-      padding: 14px 16px 12px;
-      box-shadow: 0 8px 24px rgba(26, 26, 46, 0.25);
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.24);
+      margin-bottom: 14px;
     }
-    .header-top {
+    .hero-top {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
     }
-    .title { font-size: 20px; font-weight: 700; }
-    .subtitle { margin-top: 4px; font-size: 12px; opacity: 0.82; }
-    .badge {
-      white-space: nowrap;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.12);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin: 0;
     }
-    .privacy {
-      margin-top: 10px;
-      background: rgba(255,255,255,0.12);
-      border-left: 4px solid #7dd3fc;
-      border-radius: 12px;
-      padding: 10px 12px;
+    .hero-sub {
+      margin-top: 6px;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
+      opacity: 0.92;
     }
-    .tab-panel { display: none; animation: fadeIn 0.25s ease; }
-    .tab-panel.active { display: block; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    .hero-badge {
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.16);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .privacy-note {
+      margin-top: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 12px 14px;
+      line-height: 1.65;
+      font-size: 13px;
     }
     .card {
       background: var(--card);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 14px;
+      padding: 15px;
       margin-bottom: 12px;
-      border-left: 5px solid transparent;
     }
     .card h2, .card h3, .card h4 {
       margin: 0 0 10px;
-      color: var(--primary);
+      color: #102a5c;
     }
     .card p {
       margin: 6px 0;
-      line-height: 1.6;
+      line-height: 1.65;
       font-size: 14px;
     }
-    .border-primary { border-left-color: var(--primary); }
-    .border-danger { border-left-color: var(--danger); }
-    .border-warning { border-left-color: var(--warning); }
-    .border-success { border-left-color: var(--success); }
-    .border-info { border-left-color: var(--info); }
-    .row {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: 1fr;
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .hidden { display: none !important; }
+    .upload-zone {
+      position: relative;
+      border: 2px dashed #94a3b8;
+      border-radius: 20px;
+      padding: 24px 16px;
+      text-align: center;
+      background: linear-gradient(180deg, #fbfdff 0%, #f3f7fd 100%);
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
     }
-    @media (min-width: 700px) {
-      .row.two { grid-template-columns: 1fr 1fr; }
-      .row.three { grid-template-columns: repeat(3, 1fr); }
+    .upload-zone.dragover {
+      border-color: var(--info);
+      background: #eef5ff;
+      transform: translateY(-1px);
     }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-size: 13px; color: var(--muted); font-weight: 600; }
-    input[type="text"], input[type="number"], textarea, select {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 14px;
-      background: #fff;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .upload-icon {
+      font-size: 34px;
+      margin-bottom: 8px;
     }
-    input:focus, textarea:focus, select:focus {
-      border-color: #8da2fb;
-      box-shadow: 0 0 0 3px rgba(141, 162, 251, 0.18);
+    .upload-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #102a5c;
+      margin-bottom: 6px;
     }
-    textarea { min-height: 130px; resize: vertical; }
-    .file-input {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      border: 1px dashed #96a3b8;
-      background: #fbfcff;
-      border-radius: 14px;
+    .upload-hint {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
     }
-    .btn-row {
+    .action-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 12px;
     }
     .btn {
+      appearance: none;
       border: 0;
       border-radius: 12px;
       padding: 10px 14px;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.15s ease, opacity 0.2s ease;
     }
     .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-accent { background: var(--accent); color: #fff; }
-    .btn-light { background: #eef2ff; color: var(--primary); }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-warning { background: var(--warning); color: #fff; }
-    .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
-    .tips {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
+    .btn-light { background: #eef4ff; color: #16356b; }
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(37,99,235,0.14);
+      border-top-color: var(--info);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress {
+      height: 10px;
+      background: #e5eaf3;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+      transition: width 0.25s ease;
     }
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      margin-top: 10px;
+      margin: 10px 0 12px;
     }
     .stat-box {
-      background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: 14px;
+      background: #f8fbff;
       padding: 12px;
+      min-width: 0;
     }
-    .stat-label { color: var(--muted); font-size: 12px; }
-    .stat-value { margin-top: 4px; font-size: 20px; font-weight: 700; color: var(--primary); }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat-value {
+      margin-top: 4px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #102a5c;
+      word-break: break-word;
+    }
+    .banner {
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+      line-height: 1.6;
+    }
+    .banner-danger { background: var(--danger-soft); color: #991b1b; border-color: #fecaca; }
+    .banner-warning { background: var(--warning-soft); color: #9a3412; border-color: #fed7aa; }
+    .banner-info { background: var(--info-soft); color: #1d4ed8; border-color: #bfdbfe; }
+    .banner-success { background: var(--success-soft); color: #166534; border-color: #bbf7d0; }
+    .banner-neutral { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+    details.section {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    details.section summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      user-select: none;
+    }
+    details.section summary::-webkit-details-marker { display: none; }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-weight: 800;
+      color: #102a5c;
+      font-size: 17px;
+    }
+    .summary-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4ff;
+      flex: 0 0 auto;
+    }
+    .summary-badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .badge-neutral { background: #eef2f7; color: #475569; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-warning { background: #ffedd5; color: #c2410c; }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-info { background: #dbeafe; color: #1d4ed8; }
+    .section-body {
+      padding: 0 16px 16px;
+      border-top: 1px solid #edf2f7;
+    }
     .preview-box {
-      background: #fbfcff;
+      background: #fbfdff;
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px;
       white-space: pre-wrap;
       word-break: break-word;
-      font-size: 14px;
-      line-height: 1.7;
-      max-height: 280px;
+      line-height: 1.75;
+      max-height: 300px;
       overflow: auto;
-    }
-    .banner {
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
       font-size: 14px;
-      font-weight: 700;
     }
-    .banner-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .banner-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-    .banner-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .banner-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
     .table-wrap {
       overflow-x: auto;
       border: 1px solid var(--border);
@@ -208,333 +294,234 @@
     }
     table {
       width: 100%;
-      border-collapse: collapse;
       min-width: 620px;
+      border-collapse: collapse;
       font-size: 13px;
     }
     th, td {
       padding: 10px 12px;
-      border-bottom: 1px solid #edf0f5;
+      border-bottom: 1px solid #edf1f7;
       text-align: left;
       vertical-align: top;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     th {
-      background: #f8fafc;
-      color: var(--primary);
+      background: #f8fbff;
+      color: #102a5c;
       position: sticky;
       top: 0;
       z-index: 1;
     }
+    .chip-row { margin-bottom: 8px; }
     .chip {
       display: inline-block;
+      margin: 0 6px 6px 0;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: 700;
-      margin-right: 6px;
-      margin-bottom: 6px;
+      font-weight: 800;
     }
-    .chip-high { background: #fef2f2; color: #b91c1c; }
-    .chip-medium { background: #fff7ed; color: #c2410c; }
-    .chip-tip { background: #eff6ff; color: #1d4ed8; }
-    .list { margin: 0; padding-left: 18px; }
-    .list li { margin: 6px 0; line-height: 1.6; }
-    .muted { color: var(--muted); }
-    .image-preview {
-      width: 100%;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      max-height: 300px;
-      object-fit: contain;
-      background: #fff;
-    }
-    .progress {
-      height: 10px;
-      background: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #60a5fa, #2563eb);
-      transition: width 0.2s ease;
-    }
-    .spinner {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      border: 2px solid rgba(26,26,46,0.15);
-      border-top-color: var(--accent);
-      display: inline-block;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #eef2ff;
-      color: var(--primary);
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-    details {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background: #fff;
-      margin-bottom: 10px;
-    }
-    details summary {
-      cursor: pointer;
-      font-weight: 700;
-      color: var(--primary);
-      outline: none;
-    }
+    .chip-high { background: #fee2e2; color: #b91c1c; }
+    .chip-medium { background: #ffedd5; color: #c2410c; }
+    .chip-tip { background: #dbeafe; color: #1d4ed8; }
+    .chip-neutral { background: #eef2f7; color: #475569; }
     .empty {
       padding: 18px 14px;
       text-align: center;
       color: var(--muted);
-      background: #fbfcff;
       border: 1px dashed var(--border);
       border-radius: 14px;
+      background: #fbfdff;
+      line-height: 1.7;
     }
-    .bottom-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 40;
-      background: rgba(255,255,255,0.98);
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
-    }
-    .bottom-nav-inner {
-      max-width: 900px;
-      margin: 0 auto;
+    .grid-two {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 2px;
-      padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
-    .tab-btn {
-      border: 0;
-      background: transparent;
-      padding: 8px 4px;
-      border-radius: 12px;
-      color: var(--muted);
-      font-size: 11px;
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 13px;
       font-weight: 700;
-      line-height: 1.3;
+      color: var(--muted);
     }
-    .tab-btn.active {
-      background: #eef2ff;
-      color: var(--primary);
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    .tab-btn span { display: block; font-size: 18px; margin-bottom: 2px; }
-    .small { font-size: 12px; }
-    .hidden { display: none !important; }
-    .success-text { color: var(--success); font-weight: 700; }
-    .warning-text { color: var(--warning); font-weight: 700; }
-    .danger-text { color: var(--danger); font-weight: 700; }
-    .info-text { color: var(--info); font-weight: 700; }
+    input:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+    .sub-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfdff;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .success-text { color: var(--success); font-weight: 800; }
+    .warning-text { color: var(--warning); font-weight: 800; }
+    .danger-text { color: var(--danger); font-weight: 800; }
+    .info-text { color: var(--info); font-weight: 800; }
     .mono { font-family: Consolas, Monaco, monospace; }
     .footer-note {
+      text-align: center;
       font-size: 12px;
       color: var(--muted);
-      text-align: center;
-      margin: 16px 0 6px;
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+    .img-preview {
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+    @media (min-width: 720px) {
+      .app { padding: 20px 18px 32px; }
+      .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .grid-two { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .hero-title { font-size: 21px; }
+      .hero-top { flex-direction: column; }
+      .summary-left { font-size: 16px; }
+      .summary-badge { white-space: normal; text-align: right; }
+      table { min-width: 520px; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body>
   <div class="app">
-    <header class="header">
-      <div class="header-top">
+    <header class="hero">
+      <div class="hero-top">
         <div>
-          <div class="title">标书CT扫描仪</div>
-          <div class="subtitle">浏览器本地版 · 零服务器 · GitHub Pages 可直接托管</div>
+          <h1 class="hero-title">标书CT扫描仪</h1>
+          <div class="hero-sub">上传后自动完成 5 项检查：文档信息 / 废标风险 / 价格分析 / 有效期 / 格式规范</div>
         </div>
-        <div class="badge">🔒 本地处理</div>
+        <div class="hero-badge">🔒 本地处理</div>
       </div>
-      <div class="privacy">🔒 本地处理 · 文件不上传任何服务器 · 关闭即清空</div>
+      <div class="privacy-note">重要：文件提取、OCR、风险扫描、金额校验全部在当前浏览器本地完成，不上传服务器。适合手机与微信内置浏览器直接打开使用。</div>
     </header>
 
-    <section id="tab-scan" class="tab-panel active">
-      <div class="card border-primary">
-        <h2>📄 文档扫描</h2>
-        <p class="tips">支持 PDF、DOCX、JPG/PNG/BMP。所有提取与识别过程均在当前浏览器内完成，适合手机和微信内置浏览器使用。</p>
-        <input id="fileInput" class="file-input" type="file" accept=".pdf,.docx,image/*,.bmp">
-        <div class="btn-row">
-          <button id="clearBtn" class="btn btn-light" type="button">清空当前结果</button>
-        </div>
+    <section class="card">
+      <h2>上传即自动扫描</h2>
+      <div id="uploadZone" class="upload-zone" tabindex="0" role="button" aria-label="上传标书文件">
+        <div class="upload-icon">📤</div>
+        <div class="upload-title">点击或拖拽上传文件</div>
+        <div id="uploadHint" class="upload-hint">支持 PDF / DOCX / 图片（JPG、PNG、BMP、WEBP）<br>上传后自动提取文字并展示全部结果，无需再点“开始扫描”</div>
+        <input id="fileInput" type="file" accept=".pdf,.docx,image/*,.bmp,.webp" class="hidden">
       </div>
-
-      <div id="scanStatusCard" class="card border-info hidden">
-        <h3>处理状态</h3>
-        <div id="scanStatusText">等待上传文件</div>
-        <div id="ocrProgressWrap" class="hidden">
-          <div class="progress"><div id="ocrProgressBar" class="progress-bar"></div></div>
-          <p id="ocrProgressText" class="small muted">OCR 准备中…</p>
-        </div>
-      </div>
-
-      <div id="imageOcrCard" class="card border-warning hidden">
-        <h3>🖼 图片 OCR 识别</h3>
-        <img id="imagePreview" class="image-preview" alt="待识别图片预览">
-        <div class="btn-row">
-          <button id="startOcrBtn" class="btn btn-warning" type="button">开始 OCR（按需加载 Tesseract.js）</button>
-        </div>
-        <p class="tips">首次 OCR 会从 CDN 懒加载 Tesseract.js，之后再次识别无需重复加载。</p>
-      </div>
-
-      <div id="scanResultCard" class="card border-success hidden">
-        <h3>提取结果</h3>
-        <div id="docMeta" class="stats-grid"></div>
-        <div id="pageStatsWrap" class="hidden">
-          <h4>分页统计</h4>
-          <div id="pageStatsTable" class="table-wrap"></div>
-        </div>
-        <h4>文字预览（前 500 字）</h4>
-        <div id="textPreview" class="preview-box"></div>
+      <div class="action-row">
+        <button id="clearBtn" class="btn btn-light" type="button">清空当前结果</button>
       </div>
     </section>
 
-    <section id="tab-risk" class="tab-panel">
-      <div class="card border-danger">
-        <h2>🚨 废标风险扫描</h2>
-        <p class="tips">从提取文字中快速定位废标/否决风险关键词，按高/中/提示三级展示上下文片段。</p>
-        <div class="btn-row">
-          <button id="useExtractedRiskBtn" class="btn btn-light hidden" type="button">从Tab1使用已提取文字</button>
-          <button id="scanRiskBtn" class="btn btn-accent" type="button">开始风险扫描</button>
-        </div>
-        <div class="field" style="margin-top: 10px;">
-          <label for="riskText">待扫描文字</label>
-          <textarea id="riskText" placeholder="可直接粘贴招标文件内容，或从 Tab1 自动带入"></textarea>
-        </div>
+    <section id="progressSection" class="card hidden">
+      <div class="progress-wrap">
+        <span id="progressSpinner" class="spinner"></span>
+        <strong id="progressText">等待处理</strong>
       </div>
-      <div id="riskResults" class="card border-danger">
-        <div class="empty">暂无扫描结果</div>
-      </div>
+      <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+      <p id="progressSubText" class="small muted">上传后将自动完成全部检查</p>
     </section>
 
-    <section id="tab-price" class="tab-panel">
-      <div class="card border-warning">
-        <h2>💰 价格大小写校验</h2>
-        <p class="tips">实时把数字金额转换为中文大写；点击校验后对比输入大写与正确值，额外给出低价偏差提示。</p>
-        <div class="row two">
-          <div class="field">
-            <label for="amountNumber">数字金额</label>
-            <input id="amountNumber" type="number" inputmode="decimal" step="0.01" placeholder="例如 123456.78">
-          </div>
-          <div class="field">
-            <label for="amountUpper">中文大写金额</label>
-            <input id="amountUpper" type="text" placeholder="例如 壹拾贰万叁仟肆佰伍拾陆元柒角捌分">
-          </div>
-        </div>
-        <div class="card border-info" style="margin-top: 12px; margin-bottom: 0; box-shadow: none; background: #fbfcff;">
-          <h4>实时正确大写</h4>
-          <div id="amountExpected" class="preview-box">请输入数字金额后自动显示</div>
-        </div>
-        <div class="btn-row">
-          <button id="validateAmountBtn" class="btn btn-primary" type="button">校验大小写是否一致</button>
-        </div>
-        <div id="amountValidationResult" style="margin-top: 10px;"></div>
-      </div>
+    <section id="resultsSection" class="hidden">
+      <details id="sec-doc" class="section" open>
+        <summary>
+          <div class="summary-left"><span class="summary-icon">📄</span><span>文档信息</span></div>
+          <span id="badge-doc" class="summary-badge badge-neutral">待扫描</span>
+        </summary>
+        <div class="section-body" id="docResults"><div class="empty">请先上传文件</div></div>
+      </details>
 
-      <div class="card border-primary">
-        <h3>低价偏差提醒</h3>
-        <div class="row two">
-          <div class="field">
-            <label for="controlPrice">控制价 / 预算价</label>
-            <input id="controlPrice" type="number" inputmode="decimal" step="0.01" placeholder="例如 1000000">
+      <details id="sec-risk" class="section" open>
+        <summary>
+          <div class="summary-left"><span class="summary-icon">🚨</span><span>废标风险</span></div>
+          <span id="badge-risk" class="summary-badge badge-neutral">待扫描</span>
+        </summary>
+        <div class="section-body" id="riskResults"><div class="empty">请先上传文件</div></div>
+      </details>
+
+      <details id="sec-price" class="section" open>
+        <summary>
+          <div class="summary-left"><span class="summary-icon">💰</span><span>价格分析</span></div>
+          <span id="badge-price" class="summary-badge badge-neutral">待扫描</span>
+        </summary>
+        <div class="section-body">
+          <div id="priceResults"><div class="empty">请先上传文件</div></div>
+          <div class="sub-card">
+            <h4>手动校验区</h4>
+            <p class="muted small">自动识别后会尝试填入首组金额，你也可以手动修改。</p>
+            <div class="grid-two">
+              <div class="field">
+                <label for="amountNumber">数字金额</label>
+                <input id="amountNumber" type="number" inputmode="decimal" step="0.01" placeholder="例如 1234567.89">
+              </div>
+              <div class="field">
+                <label for="amountUpper">中文大写金额</label>
+                <input id="amountUpper" type="text" placeholder="例如 壹佰贰拾叁万肆仟伍佰陆拾柒元捌角玖分">
+              </div>
+            </div>
+            <div class="sub-card" style="margin-top:12px;">
+              <strong>正确大写：</strong>
+              <div id="amountExpected" class="preview-box" style="margin-top:8px; max-height:none;">请输入数字金额后自动显示</div>
+            </div>
+            <div id="amountValidationResult" style="margin-top:10px;"></div>
           </div>
-          <div class="field">
-            <label for="bidPrice">投标报价</label>
-            <input id="bidPrice" type="number" inputmode="decimal" step="0.01" placeholder="例如 860000">
+          <div class="sub-card">
+            <h4>控制价偏差提醒</h4>
+            <div class="grid-two">
+              <div class="field">
+                <label for="controlPrice">控制价 / 预算价</label>
+                <input id="controlPrice" type="number" inputmode="decimal" step="0.01" placeholder="例如 1000000">
+              </div>
+              <div class="field">
+                <label for="bidPrice">投标报价</label>
+                <input id="bidPrice" type="number" inputmode="decimal" step="0.01" placeholder="例如 860000">
+              </div>
+            </div>
+            <div id="priceDiffResult" style="margin-top:10px;"></div>
           </div>
         </div>
-        <div id="priceDiffResult" style="margin-top: 10px;"></div>
-      </div>
+      </details>
+
+      <details id="sec-expiry" class="section" open>
+        <summary>
+          <div class="summary-left"><span class="summary-icon">📅</span><span>有效期</span></div>
+          <span id="badge-expiry" class="summary-badge badge-neutral">待扫描</span>
+        </summary>
+        <div class="section-body" id="expiryResults"><div class="empty">请先上传文件</div></div>
+      </details>
+
+      <details id="sec-format" class="section" open>
+        <summary>
+          <div class="summary-left"><span class="summary-icon">📋</span><span>格式规范</span></div>
+          <span id="badge-format" class="summary-badge badge-neutral">待扫描</span>
+        </summary>
+        <div class="section-body" id="formatResults"><div class="empty">请先上传文件</div></div>
+      </details>
     </section>
 
-    <section id="tab-expiry" class="tab-panel">
-      <div class="card border-warning">
-        <h2>📅 资质有效期</h2>
-        <p class="tips">自动提取类似“有效期至：2030年6月15日”“2025.03.01 至 2028.03.01”“到 YYYY年MM月DD日 止”的日期，并按剩余天数排序。</p>
-        <div class="btn-row">
-          <button id="useExtractedExpiryBtn" class="btn btn-light hidden" type="button">从Tab1使用已提取文字</button>
-          <button id="scanExpiryBtn" class="btn btn-primary" type="button">提取并计算有效期</button>
-        </div>
-        <div class="field" style="margin-top: 10px;">
-          <label for="expiryText">资质/证书文本</label>
-          <textarea id="expiryText" placeholder="粘贴证书文字，或从 Tab1 自动带入"></textarea>
-        </div>
-      </div>
-      <div id="expiryResults" class="card border-warning">
-        <div class="empty">暂无有效期分析结果</div>
-      </div>
-    </section>
-
-    <section id="tab-format" class="tab-panel">
-      <div class="card border-info">
-        <h2>📋 格式规范检查</h2>
-        <p class="tips">检查标点符号规范、日期格式统一性、关键字段完整性。适合快速做投标文件“排版体检”。</p>
-        <div class="btn-row">
-          <button id="useExtractedFormatBtn" class="btn btn-light hidden" type="button">从Tab1使用已提取文字</button>
-          <button id="scanFormatBtn" class="btn btn-primary" type="button">开始格式检查</button>
-        </div>
-        <div class="field" style="margin-top: 10px;">
-          <label for="formatText">待检查文字</label>
-          <textarea id="formatText" placeholder="可直接粘贴，也可从 Tab1 带入"></textarea>
-        </div>
-      </div>
-      <div id="formatResults" class="card border-info">
-        <div class="empty">暂无格式检查结果</div>
-      </div>
-    </section>
-
-    <section id="tab-report" class="tab-panel">
-      <div class="card border-primary">
-        <h2>📊 综合报告</h2>
-        <p class="tips">汇总 Tab2-Tab5 的检查结果，形成一份可下载的文本版风控报告。</p>
-        <div class="btn-row">
-          <button id="generateReportBtn" class="btn btn-primary" type="button">生成综合报告</button>
-          <button id="downloadReportBtn" class="btn btn-success" type="button">下载文本报告</button>
-        </div>
-      </div>
-      <div id="reportResults" class="card border-primary">
-        <div class="empty">点击“生成综合报告”后查看汇总结果</div>
-      </div>
-    </section>
-
-    <div class="footer-note">仅在当前浏览器内处理文件 · 关闭页面即清空内存中的内容</div>
+    <div class="footer-note">关闭页面即清空本地内存中的提取内容 · 建议最终仍人工复核签章页、报价页、资格页</div>
   </div>
-
-  <nav class="bottom-nav">
-    <div class="bottom-nav-inner">
-      <button class="tab-btn active" data-tab="scan" type="button"><span>📄</span>文档扫描</button>
-      <button class="tab-btn" data-tab="risk" type="button"><span>🚨</span>废标风险</button>
-      <button class="tab-btn" data-tab="price" type="button"><span>💰</span>大小写</button>
-      <button class="tab-btn" data-tab="expiry" type="button"><span>📅</span>有效期</button>
-      <button class="tab-btn" data-tab="format" type="button"><span>📋</span>格式检查</button>
-      <button class="tab-btn" data-tab="report" type="button"><span>📊</span>综合报告</button>
-    </div>
-  </nav>
 
   <script>
     var APP_STATE = {
@@ -545,49 +532,41 @@
       expiryResults: null,
       formatResults: null,
       priceResults: null,
-      reportText: '',
       currentFileType: '',
-      imageDataUrl: '',
-      currentImageFile: null,
-      totalPages: 0
+      totalPages: 0,
+      totalPagesLabel: '',
+      imagePreviewUrl: ''
     };
 
     var KEYWORD_DB = [
-      ["未加盖公章", "签章缺失", "高"],
-      ["未签字", "签字缺失", "高"],
-      ["盖章无效", "签章问题", "高"],
-      ["图片章", "签章问题", "高"],
-      ["未使用CA", "电子签名", "高"],
-      ["CA证书过期", "电子签名", "高"],
-      ["联合体协议", "联合投标", "高"],
-      ["不接受联合体", "联合投标", "高"],
-      ["不接受备选方案", "备选方案", "高"],
-      ["备选报价", "备选方案", "高"],
-      ["资质证书过期", "资质问题", "高"],
-      ["营业执照过期", "资质问题", "高"],
-      ["安全生产许可证过期", "资质问题", "高"],
-      ["业绩证明不足", "业绩要求", "高"],
-      ["虚假材料", "虚假材料", "高"],
-      ["不满足资格条件", "资质要求", "高"],
-      ["大小写不一致", "报价矛盾", "高"],
-      ["报价超预算", "报价超限", "高"],
-      ["超出最高限价", "报价超限", "高"],
-      ["低于成本价", "异常低价", "高"],
-      ["串通投标", "违法行为", "高"],
-      ["陪标", "违法行为", "高"],
-      ["泄露标底", "违法行为", "高"],
-      ["逾期送达", "时间问题", "高"],
-      ["不予受理", "废标提示", "高"],
-      ["不平衡报价", "报价风险", "中"],
-      ["有效期不足", "有效期", "中"],
-      ["投标有效期", "有效期", "中"],
-      ["截止时间", "时间问题", "中"],
-      ["名称不一致", "名称矛盾", "中"],
-      ["法定代表人", "签字主体", "中"],
-      ["授权委托书", "授权文件", "中"],
-      ["授权日期", "日期逻辑", "中"],
-      ["重新招标", "流程问题", "提示"],
-      ["否决投标", "废标提示", "提示"]
+      ["未加盖公章",         "签章缺失",   "高",   "文件缺少公章，将被判无效"],
+      ["未签字",             "签字缺失",   "高",   "文件缺少签字"],
+      ["盖章无效",           "签章问题",   "高",   "印章被判为无效"],
+      ["图片章",             "签章问题",   "高",   "扫描图片章不被接受，须原章或CA数字签章"],
+      ["未使用CA",           "电子签名",   "高",   "电子标书须CA证书签章"],
+      ["CA证书过期",         "电子签名",   "高",   "CA证书失效导致签章无效"],
+      ["不接受联合体",       "联合投标",   "高",   "招标文件明确不接受联合体投标"],
+      ["不接受备选方案",     "备选方案",   "高",   "含备选报价将被废标"],
+      ["备选报价",           "备选方案",   "高",   "出现备选报价，可能触发废标"],
+      ["资质证书过期",       "资质问题",   "高",   "过期资质等同无效资质"],
+      ["营业执照过期",       "资质问题",   "高",   "营业执照过期直接废标"],
+      ["安全生产许可证过期", "资质问题",   "高",   "安全生产许可证过期"],
+      ["业绩证明不足",       "业绩要求",   "高",   "业绩不满足最低要求"],
+      ["不满足资格条件",     "资质要求",   "高",   "明确标注不满足资格条件"],
+      ["大小写不一致",       "报价矛盾",   "高",   "报价大小写不一致，直接废标"],
+      ["报价超预算",         "报价超限",   "高",   "报价超出预算控制价"],
+      ["超出最高限价",       "报价超限",   "高",   "超出最高限价即废标"],
+      ["低于成本价",         "异常低价",   "高",   "低于成本价的报价可被废标"],
+      ["串通投标",           "违法行为",   "高",   "涉嫌串通投标，违法且废标"],
+      ["陪标",               "违法行为",   "高",   "涉嫌陪标，违法且废标"],
+      ["泄露标底",           "违法行为",   "高",   "泄露标底违法"],
+      ["逾期送达",           "时间问题",   "高",   "逾期投标不予受理"],
+      ["不予受理",           "废标提示",   "高",   "明确不予受理表述"],
+      ["不平衡报价",         "报价风险",   "中",   "不平衡报价影响评分，可能引发质疑"],
+      ["有效期不足",         "有效期",     "中",   "投标有效期不满足要求"],
+      ["名称不一致",         "名称矛盾",   "中",   "公司/法人名称前后不一致"],
+      ["重新招标",           "流程问题",   "提示", "文件中出现此词，可能面临重招"],
+      ["否决投标",           "废标提示",   "提示", "注意否决投标的具体条款"]
     ];
 
     var CN_NUMS = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
@@ -598,9 +577,12 @@
       return document.getElementById(id);
     }
 
+    function getTextSafe(text) {
+      return text == null ? '' : String(text);
+    }
+
     function escapeHtml(text) {
-      var str = String(text == null ? '' : text);
-      return str
+      return getTextSafe(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -608,67 +590,66 @@
         .replace(/'/g, '&#39;');
     }
 
-    function getTextSafe(text) {
-      if (text == null) {
-        return '';
-      }
-      return String(text);
+    function countChars(text) {
+      return getTextSafe(text).replace(/\s+/g, '').length;
     }
 
-    function setStatus(message, isBusy) {
-      var card = byId('scanStatusCard');
-      card.classList.remove('hidden');
-      byId('scanStatusText').innerHTML = (isBusy ? '<span class="spinner"></span>' : '') + escapeHtml(message);
+    function readFileAsArrayBuffer(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (e) { resolve(e.target.result); };
+        reader.onerror = function () { reject(reader.error || new Error('读取文件失败')); };
+        reader.readAsArrayBuffer(file);
+      });
     }
 
-    function switchTab(tabName) {
-      var panels = document.querySelectorAll('.tab-panel');
-      var btns = document.querySelectorAll('.tab-btn');
-      for (var i = 0; i < panels.length; i++) {
-        panels[i].classList.remove('active');
-      }
-      for (var j = 0; j < btns.length; j++) {
-        btns[j].classList.remove('active');
-      }
-      byId('tab-' + tabName).classList.add('active');
-      var activeBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
-      if (activeBtn) {
-        activeBtn.classList.add('active');
-      }
+    function readFileAsDataURL(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (e) { resolve(e.target.result); };
+        reader.onerror = function () { reject(reader.error || new Error('读取图片失败')); };
+        reader.readAsDataURL(file);
+      });
     }
 
-    function bindTabEvents() {
-      var btns = document.querySelectorAll('.tab-btn');
-      for (var i = 0; i < btns.length; i++) {
-        btns[i].addEventListener('click', function () {
-          switchTab(this.getAttribute('data-tab'));
-        });
-      }
+    function setProgress(percent, text, subText, busy) {
+      byId('progressSection').classList.remove('hidden');
+      byId('progressBar').style.width = Math.max(0, Math.min(100, percent)) + '%';
+      byId('progressText').textContent = text || '处理中';
+      byId('progressSubText').textContent = subText || '';
+      byId('progressSpinner').classList.toggle('hidden', busy === false);
     }
 
-    function updateUseExtractedButtons() {
-      var hasText = !!(APP_STATE.extractedText && APP_STATE.extractedText.replace(/\s+/g, ''));
-      var ids = ['useExtractedRiskBtn', 'useExtractedExpiryBtn', 'useExtractedFormatBtn'];
-      for (var i = 0; i < ids.length; i++) {
-        var btn = byId(ids[i]);
-        if (hasText) {
-          btn.classList.remove('hidden');
-        } else {
-          btn.classList.add('hidden');
-        }
-      }
+    function setBadge(id, text, cls) {
+      var el = byId(id);
+      el.className = 'summary-badge ' + (cls || 'badge-neutral');
+      el.textContent = text;
     }
 
-    function syncTextareasIfEmpty() {
-      if (APP_STATE.extractedText) {
-        if (!byId('riskText').value) { byId('riskText').value = APP_STATE.extractedText; }
-        if (!byId('expiryText').value) { byId('expiryText').value = APP_STATE.extractedText; }
-        if (!byId('formatText').value) { byId('formatText').value = APP_STATE.extractedText; }
-      }
-      updateUseExtractedButtons();
+    function setEmptyState() {
+      byId('docResults').innerHTML = '<div class="empty">请先上传文件</div>';
+      byId('riskResults').innerHTML = '<div class="empty">请先上传文件</div>';
+      byId('priceResults').innerHTML = '<div class="empty">请先上传文件</div>';
+      byId('expiryResults').innerHTML = '<div class="empty">请先上传文件</div>';
+      byId('formatResults').innerHTML = '<div class="empty">请先上传文件</div>';
+      setBadge('badge-doc', '待扫描', 'badge-neutral');
+      setBadge('badge-risk', '待扫描', 'badge-neutral');
+      setBadge('badge-price', '待扫描', 'badge-neutral');
+      setBadge('badge-expiry', '待扫描', 'badge-neutral');
+      setBadge('badge-format', '待扫描', 'badge-neutral');
     }
 
-    function resetState() {
+    function clearManualInputs() {
+      byId('amountNumber').value = '';
+      byId('amountUpper').value = '';
+      byId('controlPrice').value = '';
+      byId('bidPrice').value = '';
+      byId('amountExpected').textContent = '请输入数字金额后自动显示';
+      byId('amountValidationResult').innerHTML = '';
+      byId('priceDiffResult').innerHTML = '<div class="empty">输入控制价和投标报价后自动显示偏差比例。</div>';
+    }
+
+    function clearAll() {
       APP_STATE.extractedText = '';
       APP_STATE.fileName = '';
       APP_STATE.pages = [];
@@ -676,327 +657,48 @@
       APP_STATE.expiryResults = null;
       APP_STATE.formatResults = null;
       APP_STATE.priceResults = null;
-      APP_STATE.reportText = '';
       APP_STATE.currentFileType = '';
-      APP_STATE.imageDataUrl = '';
-      APP_STATE.currentImageFile = null;
       APP_STATE.totalPages = 0;
+      APP_STATE.totalPagesLabel = '';
+      APP_STATE.imagePreviewUrl = '';
       byId('fileInput').value = '';
-      byId('riskText').value = '';
-      byId('expiryText').value = '';
-      byId('formatText').value = '';
-      byId('scanResultCard').classList.add('hidden');
-      byId('imageOcrCard').classList.add('hidden');
-      byId('pageStatsWrap').classList.add('hidden');
-      byId('ocrProgressWrap').classList.add('hidden');
-      byId('riskResults').innerHTML = '<div class="empty">暂无扫描结果</div>';
-      byId('expiryResults').innerHTML = '<div class="empty">暂无有效期分析结果</div>';
-      byId('formatResults').innerHTML = '<div class="empty">暂无格式检查结果</div>';
-      byId('reportResults').innerHTML = '<div class="empty">点击“生成综合报告”后查看汇总结果</div>';
-      setStatus('已清空当前结果', false);
-      updateUseExtractedButtons();
+      byId('uploadHint').innerHTML = '支持 PDF / DOCX / 图片（JPG、PNG、BMP、WEBP）<br>上传后自动提取文字并展示全部结果，无需再点“开始扫描”';
+      byId('resultsSection').classList.add('hidden');
+      byId('progressSection').classList.add('hidden');
+      clearManualInputs();
+      setEmptyState();
     }
 
-    function countChars(text) {
-      return getTextSafe(text).replace(/\s+/g, '').length;
-    }
-
-    function readFileAsArrayBuffer(file, onSuccess, onError) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        onSuccess(e.target.result);
-      };
-      reader.onerror = function () {
-        if (onError) { onError(reader.error); }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function readFileAsDataURL(file, onSuccess, onError) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        onSuccess(e.target.result);
-      };
-      reader.onerror = function () {
-        if (onError) { onError(reader.error); }
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function renderDocResults() {
-      if (!APP_STATE.extractedText) {
-        return;
-      }
-      var preview = APP_STATE.extractedText.slice(0, 500);
-      byId('scanResultCard').classList.remove('hidden');
-      byId('textPreview').textContent = preview || '未提取到文字';
-
-      var metaHtml = '';
-      metaHtml += '<div class="stat-box"><div class="stat-label">文件名</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.fileName || '-') + '</div></div>';
-      metaHtml += '<div class="stat-box"><div class="stat-label">总页数</div><div class="stat-value">' + APP_STATE.totalPages + '</div></div>';
-      metaHtml += '<div class="stat-box"><div class="stat-label">字符数</div><div class="stat-value">' + countChars(APP_STATE.extractedText) + '</div></div>';
-      metaHtml += '<div class="stat-box"><div class="stat-label">文本来源</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.currentFileType.toUpperCase()) + '</div></div>';
-      byId('docMeta').innerHTML = metaHtml;
-
-      if (APP_STATE.currentFileType === 'pdf' && APP_STATE.pages.length) {
-        byId('pageStatsWrap').classList.remove('hidden');
-        var table = '<table><thead><tr><th>页码</th><th>字符数</th><th>预览</th></tr></thead><tbody>';
-        for (var i = 0; i < APP_STATE.pages.length; i++) {
-          var p = APP_STATE.pages[i];
-          table += '<tr><td>' + p.page + '</td><td>' + p.charCount + '</td><td>' + escapeHtml(getTextSafe(p.text).slice(0, 80) || '（空页）') + '</td></tr>';
-        }
-        table += '</tbody></table>';
-        byId('pageStatsTable').innerHTML = table;
-      } else {
-        byId('pageStatsWrap').classList.add('hidden');
-      }
-      syncTextareasIfEmpty();
-    }
-
-    function processPdf(buffer) {
-      APP_STATE.currentFileType = 'pdf';
-      setStatus('正在解析 PDF，请稍候…', true);
-      pdfjsLib.getDocument({ data: buffer }).promise.then(function (pdf) {
-        APP_STATE.totalPages = pdf.numPages;
-        APP_STATE.pages = [];
-        var tasks = [];
-        for (var i = 1; i <= pdf.numPages; i++) {
-          (function (pageNum) {
-            tasks.push(
-              pdf.getPage(pageNum).then(function (page) {
-                return page.getTextContent().then(function (textContent) {
-                  var textItems = [];
-                  for (var k = 0; k < textContent.items.length; k++) {
-                    textItems.push(textContent.items[k].str);
-                  }
-                  var joined = textItems.join(' ').replace(/\s+/g, ' ').trim();
-                  APP_STATE.pages.push({
-                    page: pageNum,
-                    text: joined,
-                    charCount: countChars(joined)
-                  });
-                });
-              })
-            );
-          })(i);
-        }
-        return Promise.all(tasks);
-      }).then(function () {
-        APP_STATE.pages.sort(function (a, b) { return a.page - b.page; });
-        var combined = [];
-        for (var i = 0; i < APP_STATE.pages.length; i++) {
-          combined.push(APP_STATE.pages[i].text);
-        }
-        APP_STATE.extractedText = combined.join('\n\n');
-        renderDocResults();
-        setStatus('PDF 提取完成，可切换到底部各标签继续检查。', false);
-      }).catch(function (err) {
-        console.error(err);
-        setStatus('PDF 解析失败：' + (err && err.message ? err.message : '未知错误'), false);
-      });
-    }
-
-    function processDocx(buffer) {
-      APP_STATE.currentFileType = 'docx';
-      APP_STATE.totalPages = 1;
-      setStatus('正在提取 DOCX 文本…', true);
-      mammoth.extractRawText({ arrayBuffer: buffer }).then(function (result) {
-        APP_STATE.extractedText = getTextSafe(result.value || result.text || '').trim();
-        APP_STATE.pages = [{ page: 1, text: APP_STATE.extractedText, charCount: countChars(APP_STATE.extractedText) }];
-        renderDocResults();
-        setStatus('DOCX 提取完成。', false);
-      }).catch(function (err) {
-        console.error(err);
-        setStatus('DOCX 提取失败：' + (err && err.message ? err.message : '未知错误'), false);
-      });
-    }
-
-    function setupImageForOcr(file) {
-      APP_STATE.currentFileType = 'image';
-      APP_STATE.totalPages = 1;
-      APP_STATE.currentImageFile = file;
+    function resetForNewFile(file) {
       APP_STATE.extractedText = '';
+      APP_STATE.fileName = file && file.name ? file.name : '';
       APP_STATE.pages = [];
-      byId('scanResultCard').classList.add('hidden');
-      setStatus('图片已载入，请点击 OCR 开始识别。', false);
-      readFileAsDataURL(file, function (dataUrl) {
-        APP_STATE.imageDataUrl = dataUrl;
-        byId('imagePreview').src = dataUrl;
-        byId('imageOcrCard').classList.remove('hidden');
-      }, function () {
-        setStatus('图片读取失败。', false);
-      });
-    }
-
-    function loadTesseractIfNeeded(callback) {
-      if (window.Tesseract) {
-        callback();
-        return;
-      }
-      setStatus('正在懒加载 Tesseract.js OCR 引擎…', true);
-      var script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
-      script.onload = function () {
-        setStatus('OCR 引擎加载完成，准备识别。', false);
-        callback();
-      };
-      script.onerror = function () {
-        setStatus('Tesseract.js 加载失败，请检查网络后重试。', false);
-      };
-      document.body.appendChild(script);
-    }
-
-    function startImageOcr() {
-      if (!APP_STATE.currentImageFile) {
-        setStatus('请先上传图片。', false);
-        return;
-      }
-      loadTesseractIfNeeded(function () {
-        byId('ocrProgressWrap').classList.remove('hidden');
-        byId('ocrProgressBar').style.width = '0%';
-        byId('ocrProgressText').textContent = 'OCR 识别中…';
-        setStatus('正在进行 OCR 识别，请稍候…', true);
-        Tesseract.recognize(APP_STATE.currentImageFile, 'chi_sim+eng', {
-          logger: function (m) {
-            if (m && m.progress != null) {
-              var pct = Math.round(m.progress * 100);
-              byId('ocrProgressBar').style.width = pct + '%';
-              byId('ocrProgressText').textContent = (m.status || '处理中') + ' · ' + pct + '%';
-            }
-          }
-        }).then(function (res) {
-          APP_STATE.extractedText = getTextSafe(res && res.data ? res.data.text : '').trim();
-          APP_STATE.pages = [{ page: 1, text: APP_STATE.extractedText, charCount: countChars(APP_STATE.extractedText) }];
-          renderDocResults();
-          setStatus('图片 OCR 完成。', false);
-        }).catch(function (err) {
-          console.error(err);
-          setStatus('OCR 失败：' + (err && err.message ? err.message : '未知错误'), false);
-        });
-      });
-    }
-
-    function handleFileUpload(evt) {
-      var file = evt.target.files && evt.target.files[0];
-      if (!file) {
-        return;
-      }
-      APP_STATE.fileName = file.name || '未命名文件';
       APP_STATE.scanResults = null;
       APP_STATE.expiryResults = null;
       APP_STATE.formatResults = null;
-      APP_STATE.reportText = '';
-      byId('riskResults').innerHTML = '<div class="empty">暂无扫描结果</div>';
-      byId('expiryResults').innerHTML = '<div class="empty">暂无有效期分析结果</div>';
-      byId('formatResults').innerHTML = '<div class="empty">暂无格式检查结果</div>';
-      byId('reportResults').innerHTML = '<div class="empty">点击“生成综合报告”后查看汇总结果</div>';
-
-      var lowerName = file.name.toLowerCase();
-      if (/\.pdf$/.test(lowerName)) {
-        readFileAsArrayBuffer(file, processPdf, function () {
-          setStatus('读取 PDF 文件失败。', false);
-        });
-      } else if (/\.docx$/.test(lowerName)) {
-        readFileAsArrayBuffer(file, processDocx, function () {
-          setStatus('读取 DOCX 文件失败。', false);
-        });
-      } else if (/\.(png|jpg|jpeg|bmp|webp)$/.test(lowerName) || file.type.indexOf('image/') === 0) {
-        setupImageForOcr(file);
-      } else {
-        setStatus('暂不支持该文件格式，请上传 PDF / DOCX / 图片。', false);
-      }
+      APP_STATE.priceResults = null;
+      APP_STATE.currentFileType = '';
+      APP_STATE.totalPages = 0;
+      APP_STATE.totalPagesLabel = '';
+      APP_STATE.imagePreviewUrl = '';
+      clearManualInputs();
+      setEmptyState();
+      byId('resultsSection').classList.add('hidden');
+      byId('uploadHint').textContent = '当前文件：' + APP_STATE.fileName;
     }
 
     function getSnippet(text, index, len) {
       var source = getTextSafe(text);
-      var start = Math.max(0, index - 18);
-      var end = Math.min(source.length, index + len + 18);
+      var start = Math.max(0, index - 24);
+      var end = Math.min(source.length, index + len + 24);
       return source.slice(start, end).replace(/\s+/g, ' ');
     }
 
-    function scanRiskKeywords(text) {
-      var source = getTextSafe(text);
-      var hits = [];
-      for (var i = 0; i < KEYWORD_DB.length; i++) {
-        var item = KEYWORD_DB[i];
-        var keyword = item[0];
-        var category = item[1];
-        var level = item[2];
-        var pos = source.indexOf(keyword);
-        while (pos !== -1) {
-          hits.push({
-            keyword: keyword,
-            category: category,
-            level: level,
-            index: pos,
-            context: getSnippet(source, pos, keyword.length)
-          });
-          pos = source.indexOf(keyword, pos + keyword.length);
-        }
+    function openAllSections() {
+      var nodes = document.querySelectorAll('#resultsSection details.section');
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].open = true;
       }
-      hits.sort(function (a, b) {
-        var order = { '高': 1, '中': 2, '提示': 3 };
-        if (order[a.level] !== order[b.level]) {
-          return order[a.level] - order[b.level];
-        }
-        return a.index - b.index;
-      });
-      var summary = { '高': 0, '中': 0, '提示': 0 };
-      for (var j = 0; j < hits.length; j++) {
-        summary[hits[j].level] += 1;
-      }
-      return {
-        total: hits.length,
-        summary: summary,
-        hits: hits,
-        overall: summary['高'] > 0 ? '高风险' : (summary['中'] > 0 ? '中风险' : (summary['提示'] > 0 ? '有提示项' : '未发现明显风险词'))
-      };
-    }
-
-    function renderRiskResults(result) {
-      if (!result) {
-        byId('riskResults').innerHTML = '<div class="empty">暂无扫描结果</div>';
-        return;
-      }
-      var bannerClass = 'banner-success';
-      if (result.summary['高'] > 0) {
-        bannerClass = 'banner-danger';
-      } else if (result.summary['中'] > 0) {
-        bannerClass = 'banner-warning';
-      } else if (result.summary['提示'] > 0) {
-        bannerClass = 'banner-info';
-      }
-      var html = '';
-      html += '<div class="banner ' + bannerClass + '">';
-      html += '总体判断：' + result.overall + ' ｜ 高风险 ' + result.summary['高'] + ' 项 ｜ 中风险 ' + result.summary['中'] + ' 项 ｜ 提示 ' + result.summary['提示'] + ' 项';
-      html += '</div>';
-      html += '<div style="margin-bottom:10px;">';
-      html += '<span class="chip chip-high">🔴 高风险 ' + result.summary['高'] + '</span>';
-      html += '<span class="chip chip-medium">🟠 中风险 ' + result.summary['中'] + '</span>';
-      html += '<span class="chip chip-tip">🔵 提示 ' + result.summary['提示'] + '</span>';
-      html += '</div>';
-      if (!result.hits.length) {
-        html += '<div class="empty">未命中关键词，但仍建议人工复核盖章、签字、日期、报价与资质页。</div>';
-      } else {
-        html += '<div class="table-wrap"><table><thead><tr><th>级别</th><th>关键词</th><th>类别</th><th>上下文片段</th></tr></thead><tbody>';
-        for (var i = 0; i < result.hits.length; i++) {
-          var hit = result.hits[i];
-          var icon = hit.level === '高' ? '🔴' : (hit.level === '中' ? '🟠' : '🔵');
-          html += '<tr><td>' + icon + ' ' + hit.level + '</td><td>' + escapeHtml(hit.keyword) + '</td><td>' + escapeHtml(hit.category) + '</td><td>' + escapeHtml(hit.context) + '</td></tr>';
-        }
-        html += '</tbody></table></div>';
-      }
-      byId('riskResults').innerHTML = html;
-    }
-
-    function runRiskScan() {
-      var text = byId('riskText').value || APP_STATE.extractedText;
-      if (!getTextSafe(text).replace(/\s+/g, '')) {
-        byId('riskResults').innerHTML = '<div class="empty">请先在 Tab1 提取文字，或直接粘贴要扫描的文本。</div>';
-        return;
-      }
-      APP_STATE.scanResults = scanRiskKeywords(text);
-      renderRiskResults(APP_STATE.scanResults);
     }
 
     function sectionToChinese(section) {
@@ -1021,17 +723,13 @@
     }
 
     function integerToChinese(num) {
-      if (num === 0) {
-        return CN_NUMS[0];
-      }
+      if (num === 0) { return CN_NUMS[0]; }
       var str = '';
       var unitPos = 0;
       var needZero = false;
       while (num > 0) {
         var section = num % 10000;
-        if (needZero && section !== 0) {
-          str = CN_NUMS[0] + str;
-        }
+        if (needZero && section !== 0) { str = CN_NUMS[0] + str; }
         var sectionStr = sectionToChinese(section);
         if (section !== 0) {
           str = sectionStr + CN_INT_UNITS[unitPos] + str;
@@ -1044,17 +742,11 @@
     }
 
     function convertMoneyToChinese(input) {
-      var raw = getTextSafe(input).replace(/,/g, '').trim();
-      if (!raw) {
-        return '';
-      }
+      var raw = getTextSafe(input).replace(/[，,]/g, '').trim();
+      if (!raw) { return ''; }
       var amount = parseFloat(raw);
-      if (isNaN(amount)) {
-        return '';
-      }
-      if (amount < 0) {
-        return '负数请人工确认';
-      }
+      if (isNaN(amount)) { return ''; }
+      if (amount < 0) { return '负数请人工确认'; }
       var fixed = Math.round(amount * 100);
       var integerNum = Math.floor(fixed / 100);
       var dec = fixed % 100;
@@ -1064,28 +756,21 @@
       if (dec === 0) {
         result += '整';
       } else {
-        if (jiao > 0) {
-          result += CN_NUMS[jiao] + '角';
-        }
+        if (jiao > 0) { result += CN_NUMS[jiao] + '角'; }
         if (fen > 0) {
-          if (jiao === 0) {
-            result += '零';
-          }
+          if (jiao === 0) { result += '零'; }
           result += CN_NUMS[fen] + '分';
         }
       }
-      result = result.replace(/零+/g, '零');
-      result = result.replace(/零元/g, '元');
-      result = result.replace(/零角/g, '');
-      return result;
+      return result.replace(/零+/g, '零').replace(/零元/g, '元').replace(/零角/g, '');
     }
 
     function normalizeUppercase(text) {
       var map = {
         '一': '壹', '二': '贰', '三': '叁', '四': '肆', '五': '伍', '六': '陆', '七': '柒', '八': '捌', '九': '玖',
-        '十': '拾', '百': '佰', '千': '仟', '圆': '元', '正': '整'
+        '十': '拾', '百': '佰', '千': '仟', '圆': '元', '正': '整', '两': '贰'
       };
-      var source = getTextSafe(text).replace(/人民币/g, '').replace(/[\s,，]/g, '');
+      var source = getTextSafe(text).replace(/人民币/g, '').replace(/[\s,，￥¥]/g, '');
       var out = '';
       for (var i = 0; i < source.length; i++) {
         out += map[source.charAt(i)] || source.charAt(i);
@@ -1093,10 +778,213 @@
       return out;
     }
 
+    function parseAmountString(raw) {
+      var cleaned = getTextSafe(raw).replace(/[¥￥元人民币\s]/g, '').replace(/[，,]/g, '');
+      var num = parseFloat(cleaned);
+      return isNaN(num) ? null : num;
+    }
+
+    function parseChineseInteger(text) {
+      var digitMap = { '零': 0, '壹': 1, '贰': 2, '叁': 3, '肆': 4, '伍': 5, '陆': 6, '柒': 7, '捌': 8, '玖': 9 };
+      var unitMap = { '拾': 10, '佰': 100, '仟': 1000 };
+      var sectionMap = { '万': 10000, '亿': 100000000 };
+      var result = 0;
+      var section = 0;
+      var number = 0;
+      var source = normalizeUppercase(text).replace(/元.*/, '');
+      for (var i = 0; i < source.length; i++) {
+        var ch = source.charAt(i);
+        if (digitMap.hasOwnProperty(ch)) {
+          number = digitMap[ch];
+        } else if (unitMap[ch]) {
+          if (number === 0) { number = 1; }
+          section += number * unitMap[ch];
+          number = 0;
+        } else if (sectionMap[ch]) {
+          section = (section + number) * sectionMap[ch];
+          result += section;
+          section = 0;
+          number = 0;
+        }
+      }
+      return result + section + number;
+    }
+
+    function parseChineseMoney(text) {
+      var source = normalizeUppercase(text);
+      if (!source) { return null; }
+      var parts = source.split('元');
+      var integerPart = parts[0] || '';
+      var decimalPart = parts[1] || '';
+      var total = parseChineseInteger(integerPart);
+      var digitMap = { '零': 0, '壹': 1, '贰': 2, '叁': 3, '肆': 4, '伍': 5, '陆': 6, '柒': 7, '捌': 8, '玖': 9 };
+      var jiaoMatch = decimalPart.match(/([零壹贰叁肆伍陆柒捌玖])角/);
+      var fenMatch = decimalPart.match(/([零壹贰叁肆伍陆柒捌玖])分/);
+      if (jiaoMatch) { total += (digitMap[jiaoMatch[1]] || 0) / 10; }
+      if (fenMatch) { total += (digitMap[fenMatch[1]] || 0) / 100; }
+      return isNaN(total) ? null : Math.round(total * 100) / 100;
+    }
+
+    function formatMoney(value) {
+      if (value == null || isNaN(value)) { return '-'; }
+      var fixed = Math.round(value * 100) / 100;
+      return fixed.toLocaleString('zh-CN', {
+        minimumFractionDigits: fixed % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function collectNumericAmounts(text) {
+      var source = getTextSafe(text);
+      var regex = /(?:[¥￥]\s*\d[\d,，]*(?:\.\d+)?|\d[\d,，]*(?:\.\d+)?\s*元)/g;
+      var matches = [];
+      var match;
+      while ((match = regex.exec(source)) !== null) {
+        var value = parseAmountString(match[0]);
+        if (value == null) { continue; }
+        matches.push({ raw: match[0], index: match.index, value: value, context: getSnippet(source, match.index, match[0].length) });
+      }
+      return matches;
+    }
+
+    function collectUppercaseAmounts(text) {
+      var source = getTextSafe(text);
+      var regex = /(?:人民币)?[壹贰叁肆伍陆柒捌玖零一二三四五六七八九拾佰仟万亿两]+(?:元|圆)(?:整|正|[零壹贰叁肆伍陆柒捌玖一二三四五六七八九拾佰仟万亿角分]+)?/g;
+      var matches = [];
+      var match;
+      while ((match = regex.exec(source)) !== null) {
+        var value = parseChineseMoney(match[0]);
+        matches.push({ raw: match[0], index: match.index, value: value, context: getSnippet(source, match.index, match[0].length) });
+      }
+      return matches;
+    }
+
+    function buildPricePair(numberItem, upperItem, source, method) {
+      var expectedUpper = convertMoneyToChinese(numberItem.value);
+      var expectedNorm = normalizeUppercase(expectedUpper);
+      var actualNorm = normalizeUppercase(upperItem.raw);
+      var numericDiff = upperItem.value == null ? null : Math.abs(numberItem.value - upperItem.value);
+      var match = actualNorm && expectedNorm ? actualNorm === expectedNorm : (numericDiff != null && numericDiff < 0.005);
+      var start = Math.min(numberItem.index, upperItem.index);
+      var end = Math.max(numberItem.index + numberItem.raw.length, upperItem.index + upperItem.raw.length);
+      return {
+        numberRaw: numberItem.raw,
+        numberValue: numberItem.value,
+        upperRaw: upperItem.raw,
+        upperValue: upperItem.value,
+        expectedUpper: expectedUpper,
+        match: match,
+        diff: numericDiff,
+        distance: Math.abs(numberItem.index - upperItem.index),
+        method: method,
+        context: getSnippet(source, start, end - start)
+      };
+    }
+
+    function autoExtractPrices(text) {
+      var source = getTextSafe(text);
+      var numbers = collectNumericAmounts(source);
+      var uppers = collectUppercaseAmounts(source);
+      var pairs = [];
+      var usedNumbers = {};
+      var usedUppers = {};
+      var directRegex = /(\d[\d,，.]+)\s*元?[\s\S]{0,100}?([壹贰叁肆伍陆柒捌玖拾佰仟万亿零一二三四五六七八九两]+元(?:整|正|[零壹贰叁肆伍陆柒捌玖一二三四五六七八九拾佰仟万亿角分]+)?)/g;
+      var directMatch;
+
+      while ((directMatch = directRegex.exec(source)) !== null) {
+        var numberIndex = directMatch.index;
+        var upperIndex = source.indexOf(directMatch[2], numberIndex);
+        var numberItem = null;
+        var upperItem = null;
+        for (var i = 0; i < numbers.length; i++) {
+          if (!usedNumbers[i] && numbers[i].raw.indexOf(directMatch[1]) !== -1 && Math.abs(numbers[i].index - numberIndex) < 6) {
+            numberItem = numbers[i];
+            usedNumbers[i] = true;
+            break;
+          }
+        }
+        for (var j = 0; j < uppers.length; j++) {
+          if (!usedUppers[j] && uppers[j].raw === directMatch[2] && Math.abs(uppers[j].index - upperIndex) < 6) {
+            upperItem = uppers[j];
+            usedUppers[j] = true;
+            break;
+          }
+        }
+        if (numberItem && upperItem) {
+          pairs.push(buildPricePair(numberItem, upperItem, source, '正则邻近配对'));
+        }
+      }
+
+      for (var n = 0; n < numbers.length; n++) {
+        if (usedNumbers[n]) { continue; }
+        var bestIndex = -1;
+        var bestDistance = 101;
+        for (var u = 0; u < uppers.length; u++) {
+          if (usedUppers[u]) { continue; }
+          var distance = Math.abs(numbers[n].index - uppers[u].index);
+          if (distance <= 100 && distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = u;
+          }
+        }
+        if (bestIndex !== -1) {
+          usedNumbers[n] = true;
+          usedUppers[bestIndex] = true;
+          pairs.push(buildPricePair(numbers[n], uppers[bestIndex], source, '100字内自动配对'));
+        }
+      }
+
+      var leftoverNumbers = [];
+      var leftoverUppers = [];
+      for (var a = 0; a < numbers.length; a++) {
+        if (!usedNumbers[a]) { leftoverNumbers.push(numbers[a]); }
+      }
+      for (var b = 0; b < uppers.length; b++) {
+        if (!usedUppers[b]) { leftoverUppers.push(uppers[b]); }
+      }
+
+      var matchCount = 0;
+      var mismatchCount = 0;
+      for (var p = 0; p < pairs.length; p++) {
+        if (pairs[p].match) { matchCount++; }
+        else { mismatchCount++; }
+      }
+
+      return {
+        pairs: pairs,
+        numbers: leftoverNumbers,
+        uppers: leftoverUppers,
+        matchCount: matchCount,
+        mismatchCount: mismatchCount,
+        totalFound: pairs.length + leftoverNumbers.length + leftoverUppers.length
+      };
+    }
+
     function updateExpectedUpper() {
-      var num = byId('amountNumber').value;
-      var converted = convertMoneyToChinese(num);
+      var converted = convertMoneyToChinese(byId('amountNumber').value);
       byId('amountExpected').textContent = converted || '请输入数字金额后自动显示';
+      return converted;
+    }
+
+    function validateUppercaseAmount(showEmptyMessage) {
+      var expected = updateExpectedUpper();
+      var actual = byId('amountUpper').value;
+      var wrap = byId('amountValidationResult');
+      if (!expected) {
+        wrap.innerHTML = showEmptyMessage === false ? '' : '<div class="empty">请输入数字金额后再校验大小写。</div>';
+        return null;
+      }
+      if (!actual) {
+        wrap.innerHTML = showEmptyMessage === false ? '' : '<div class="banner banner-warning">请输入中文大写金额以便核对。</div>';
+        return null;
+      }
+      var pass = normalizeUppercase(expected) === normalizeUppercase(actual);
+      if (pass) {
+        wrap.innerHTML = '<div class="banner banner-success">✅ 大小写一致，可继续关注报价偏差与附件页一致性。</div>';
+      } else {
+        wrap.innerHTML = '<div class="banner banner-danger">❌ 大小写不一致，请立即修正。<br>正确：' + escapeHtml(expected) + '<br>当前：' + escapeHtml(actual) + '</div>';
+      }
+      return { expected: expected, actual: actual, match: pass };
     }
 
     function evaluatePriceDiff() {
@@ -1104,63 +992,206 @@
       var bid = parseFloat(byId('bidPrice').value);
       var el = byId('priceDiffResult');
       if (isNaN(control) || isNaN(bid) || control === 0) {
-        el.innerHTML = '<div class="empty">输入控制价和投标报价后，自动显示偏差比例。</div>';
+        el.innerHTML = '<div class="empty">输入控制价和投标报价后自动显示偏差比例。</div>';
         return null;
       }
       var diff = ((bid - control) / control) * 100;
-      var diffAbs = Math.abs(diff).toFixed(2);
-      var className = 'banner-success';
+      var cls = 'banner-success';
       var verdict = '报价与控制价接近';
-      var riskLevel = '低';
       if (diff < -15) {
-        className = 'banner-danger';
+        cls = 'banner-danger';
         verdict = '报价显著低于控制价，需关注异常低价风险';
-        riskLevel = '高';
       } else if (diff < 0) {
-        className = 'banner-warning';
+        cls = 'banner-warning';
         verdict = '报价低于控制价，建议复核成本与偏差说明';
-        riskLevel = '中';
       } else if (diff > 0) {
-        className = 'banner-info';
+        cls = 'banner-info';
         verdict = '报价高于控制价，请确认是否超限';
-        riskLevel = '中';
       }
-      el.innerHTML = '<div class="banner ' + className + '">投标报价相对控制价偏差：' + (diff >= 0 ? '+' : '-') + diffAbs + '% ｜ ' + verdict + '</div>';
+      el.innerHTML = '<div class="banner ' + cls + '">投标报价相对控制价偏差：' + (diff >= 0 ? '+' : '') + diff.toFixed(2) + '% ｜ ' + verdict + '</div>';
+      return { control: control, bid: bid, diff: diff, verdict: verdict };
+    }
+
+    function scanRiskKeywords(text) {
+      var source = getTextSafe(text);
+      var hits = [];
+      for (var i = 0; i < KEYWORD_DB.length; i++) {
+        var item = KEYWORD_DB[i];
+        var keyword = item[0];
+        var category = item[1];
+        var level = item[2];
+        var advice = item[3];
+        var pos = source.indexOf(keyword);
+        while (pos !== -1) {
+          hits.push({
+            keyword: keyword,
+            category: category,
+            level: level,
+            advice: advice,
+            index: pos,
+            context: getSnippet(source, pos, keyword.length)
+          });
+          pos = source.indexOf(keyword, pos + keyword.length);
+        }
+      }
+      hits.sort(function (a, b) {
+        var order = { '高': 1, '中': 2, '提示': 3 };
+        if (order[a.level] !== order[b.level]) { return order[a.level] - order[b.level]; }
+        return a.index - b.index;
+      });
+      var summary = { '高': 0, '中': 0, '提示': 0 };
+      for (var j = 0; j < hits.length; j++) {
+        summary[hits[j].level] += 1;
+      }
       return {
-        control: control,
-        bid: bid,
-        diff: diff,
-        riskLevel: riskLevel,
-        verdict: verdict
+        total: hits.length,
+        summary: summary,
+        hits: hits,
+        overall: summary['高'] > 0 ? '高风险' : (summary['中'] > 0 ? '中风险' : (summary['提示'] > 0 ? '有提示项' : '未发现明显风险词'))
       };
     }
 
-    function validateUppercaseAmount() {
-      var expected = convertMoneyToChinese(byId('amountNumber').value);
-      var actual = byId('amountUpper').value;
-      var wrap = byId('amountValidationResult');
-      if (!expected) {
-        wrap.innerHTML = '<div class="banner banner-warning">请先输入有效的数字金额。</div>';
+    function renderDocInfo() {
+      var pageLabel = APP_STATE.totalPagesLabel || (APP_STATE.totalPages ? APP_STATE.totalPages + '页' : '-');
+      var charTotal = countChars(APP_STATE.extractedText);
+      var html = '';
+      html += '<div class="banner banner-info">已完成自动提取：' + escapeHtml(APP_STATE.fileName || '-') + ' ｜ ' + escapeHtml((APP_STATE.currentFileType || '').toUpperCase()) + ' ｜ ' + escapeHtml(pageLabel) + '</div>';
+      html += '<div class="stats-grid">';
+      html += '<div class="stat-box"><div class="stat-label">文件名</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.fileName || '-') + '</div></div>';
+      html += '<div class="stat-box"><div class="stat-label">页数</div><div class="stat-value">' + escapeHtml(pageLabel) + '</div></div>';
+      html += '<div class="stat-box"><div class="stat-label">字符数</div><div class="stat-value">' + charTotal + '</div></div>';
+      html += '<div class="stat-box"><div class="stat-label">文字来源</div><div class="stat-value" style="font-size:15px;">' + escapeHtml((APP_STATE.currentFileType || '-').toUpperCase()) + '</div></div>';
+      html += '</div>';
+      if (APP_STATE.currentFileType === 'docx') {
+        html += '<p class="muted small">DOCX 无法直接读取真实分页，按约 500 个中文字符 / 页估算。</p>';
+      }
+      if (APP_STATE.currentFileType === 'image' && APP_STATE.imagePreviewUrl) {
+        html += '<img class="img-preview" src="' + escapeHtml(APP_STATE.imagePreviewUrl) + '" alt="上传图片预览">';
+      }
+      if (APP_STATE.currentFileType === 'pdf' && APP_STATE.pages.length) {
+        html += '<div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>页码</th><th>字符数</th><th>预览</th></tr></thead><tbody>';
+        for (var i = 0; i < APP_STATE.pages.length; i++) {
+          html += '<tr><td>' + APP_STATE.pages[i].page + '</td><td>' + APP_STATE.pages[i].charCount + '</td><td>' + escapeHtml((APP_STATE.pages[i].text || '（空页）').slice(0, 90)) + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+      }
+      html += '<h4 style="margin-top:12px;">文字预览（前 800 字）</h4>';
+      html += '<div class="preview-box">' + escapeHtml((APP_STATE.extractedText || '未提取到文字').slice(0, 800)) + '</div>';
+      byId('docResults').innerHTML = html;
+      setBadge('badge-doc', pageLabel, APP_STATE.currentFileType === 'docx' ? 'badge-info' : 'badge-success');
+    }
+
+    function renderRiskResults(result) {
+      if (!result) {
+        byId('riskResults').innerHTML = '<div class="empty">暂无扫描结果</div>';
+        setBadge('badge-risk', '待扫描', 'badge-neutral');
         return;
       }
-      var pass = normalizeUppercase(expected) === normalizeUppercase(actual);
-      var html = '';
-      if (pass) {
-        html = '<div class="banner banner-success">✅ 大小写一致，可继续检查价格逻辑与报价附件。</div>';
+      var cls = 'banner-success';
+      var badgeText = '✅ 无明显风险';
+      var badgeCls = 'badge-success';
+      if (result.summary['高'] > 0) {
+        cls = 'banner-danger';
+        badgeText = '🔴 ' + result.summary['高'] + ' 高风险';
+        badgeCls = 'badge-danger';
+      } else if (result.summary['中'] > 0) {
+        cls = 'banner-warning';
+        badgeText = '🟠 ' + result.summary['中'] + ' 中风险';
+        badgeCls = 'badge-warning';
+      } else if (result.summary['提示'] > 0) {
+        cls = 'banner-info';
+        badgeText = '🔵 ' + result.summary['提示'] + ' 提示';
+        badgeCls = 'badge-info';
+      }
+      var html = '<div class="banner ' + cls + '">总体判断：' + result.overall + ' ｜ 高风险 ' + result.summary['高'] + ' ｜ 中风险 ' + result.summary['中'] + ' ｜ 提示 ' + result.summary['提示'] + '</div>';
+      html += '<div class="chip-row">';
+      html += '<span class="chip chip-high">🔴 高风险 ' + result.summary['高'] + '</span>';
+      html += '<span class="chip chip-medium">🟠 中风险 ' + result.summary['中'] + '</span>';
+      html += '<span class="chip chip-tip">🔵 提示 ' + result.summary['提示'] + '</span>';
+      html += '</div>';
+      if (!result.hits.length) {
+        html += '<div class="empty">未命中高风险词。已移除“法定代表人 / 授权委托书 / 投标有效期 / 截止时间 / 授权日期”等常规表述，减少误报。</div>';
       } else {
-        html = '<div class="banner banner-danger">❌ 大小写不一致，请立即修正。</div>';
-        html += '<div class="card border-danger" style="margin-top:10px; margin-bottom:0; box-shadow:none; background:#fff;">';
-        html += '<p><strong>正确值：</strong>' + escapeHtml(expected) + '</p>';
-        html += '<p><strong>当前输入：</strong>' + escapeHtml(actual || '（空）') + '</p>';
+        html += '<div class="table-wrap"><table><thead><tr><th>级别</th><th>关键词</th><th>类别</th><th>提示</th><th>上下文</th></tr></thead><tbody>';
+        for (var i = 0; i < result.hits.length; i++) {
+          var hit = result.hits[i];
+          var icon = hit.level === '高' ? '🔴' : (hit.level === '中' ? '🟠' : '🔵');
+          html += '<tr><td>' + icon + ' ' + hit.level + '</td><td>' + escapeHtml(hit.keyword) + '</td><td>' + escapeHtml(hit.category) + '</td><td>' + escapeHtml(hit.advice) + '</td><td>' + escapeHtml(hit.context) + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+      }
+      byId('riskResults').innerHTML = html;
+      setBadge('badge-risk', badgeText, badgeCls);
+    }
+
+    function renderPriceResults(result) {
+      if (!result) {
+        byId('priceResults').innerHTML = '<div class="empty">暂无价格分析结果</div>';
+        setBadge('badge-price', '待扫描', 'badge-neutral');
+        return;
+      }
+      var badgeText = 'ℹ️ 未识别成对金额';
+      var badgeCls = 'badge-neutral';
+      if (result.mismatchCount > 0) {
+        badgeText = '⚠️ ' + result.mismatchCount + ' 组待核对';
+        badgeCls = 'badge-warning';
+      } else if (result.matchCount > 0) {
+        badgeText = '✅ ' + result.matchCount + ' 组一致';
+        badgeCls = 'badge-success';
+      } else if (result.totalFound > 0) {
+        badgeText = '🔎 发现 ' + result.totalFound + ' 条金额线索';
+        badgeCls = 'badge-info';
+      }
+      var bannerCls = result.mismatchCount > 0 ? 'banner-warning' : (result.matchCount > 0 ? 'banner-success' : 'banner-neutral');
+      var html = '<div class="banner ' + bannerCls + '">自动识别：成对金额 ' + result.pairs.length + ' 组 ｜ 一致 ' + result.matchCount + ' 组 ｜ 需核对 ' + result.mismatchCount + ' 组</div>';
+      if (result.pairs.length) {
+        html += '<div class="table-wrap"><table><thead><tr><th>数字金额</th><th>中文大写</th><th>判断</th><th>识别方式</th><th>上下文</th></tr></thead><tbody>';
+        for (var i = 0; i < result.pairs.length; i++) {
+          var pair = result.pairs[i];
+          var verdict = pair.match ? '<span class="success-text">一致</span>' : '<span class="danger-text">不一致</span>';
+          if (!pair.match) {
+            verdict += '<br><span class="small muted">建议：' + escapeHtml(pair.expectedUpper) + '</span>';
+          }
+          html += '<tr><td>原文：' + escapeHtml(pair.numberRaw) + '<br><span class="mono">解析：' + formatMoney(pair.numberValue) + '</span></td><td>' + escapeHtml(pair.upperRaw) + (pair.upperValue != null ? '<br><span class="mono">解析：' + formatMoney(pair.upperValue) + '</span>' : '') + '</td><td>' + verdict + '</td><td>' + escapeHtml(pair.method) + '</td><td>' + escapeHtml(pair.context) + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+      } else {
+        html += '<div class="empty">未自动识别到数字金额 + 中文大写的配对，可直接使用下方手动校验区。</div>';
+      }
+      if (result.numbers.length || result.uppers.length) {
+        html += '<div class="grid-two" style="margin-top:10px;">';
+        html += '<div class="sub-card"><h4>未配对数字金额</h4>';
+        if (!result.numbers.length) {
+          html += '<p class="muted">无</p>';
+        } else {
+          html += '<ul>';
+          for (var n = 0; n < Math.min(result.numbers.length, 8); n++) {
+            html += '<li>' + escapeHtml(result.numbers[n].raw) + ' ｜ ' + escapeHtml(result.numbers[n].context) + '</li>';
+          }
+          html += '</ul>';
+        }
+        html += '</div>';
+        html += '<div class="sub-card"><h4>未配对中文大写</h4>';
+        if (!result.uppers.length) {
+          html += '<p class="muted">无</p>';
+        } else {
+          html += '<ul>';
+          for (var u = 0; u < Math.min(result.uppers.length, 8); u++) {
+            html += '<li>' + escapeHtml(result.uppers[u].raw) + ' ｜ ' + escapeHtml(result.uppers[u].context) + '</li>';
+          }
+          html += '</ul>';
+        }
+        html += '</div>';
         html += '</div>';
       }
-      APP_STATE.priceResults = {
-        expected: expected,
-        actual: actual,
-        match: pass,
-        diffInfo: evaluatePriceDiff()
-      };
-      wrap.innerHTML = html;
+      byId('priceResults').innerHTML = html;
+      setBadge('badge-price', badgeText, badgeCls);
+
+      if (result.pairs.length) {
+        byId('amountNumber').value = Math.round(result.pairs[0].numberValue * 100) / 100;
+        byId('amountUpper').value = result.pairs[0].upperRaw;
+        validateUppercaseAmount(false);
+      }
     }
 
     function isValidDate(y, m, d) {
@@ -1176,14 +1207,11 @@
       var y = parseInt(year, 10);
       var m = parseInt(month, 10);
       var d = parseInt(day, 10);
-      if (!isValidDate(y, m, d)) {
-        return null;
-      }
+      if (!isValidDate(y, m, d)) { return null; }
       var dt = new Date(y, m - 1, d);
       var today = new Date();
       today.setHours(0, 0, 0, 0);
-      var diffMs = dt.getTime() - today.getTime();
-      var diffDays = Math.floor(diffMs / 86400000);
+      var diffDays = Math.floor((dt.getTime() - today.getTime()) / 86400000);
       var status = '有效';
       var className = 'success-text';
       if (diffDays < 0) {
@@ -1199,9 +1227,6 @@
       return {
         raw: raw,
         normalized: y + '-' + pad2(m) + '-' + pad2(d),
-        year: y,
-        month: m,
-        day: d,
         date: dt,
         diffDays: diffDays,
         status: status,
@@ -1228,8 +1253,7 @@
         var match;
         regex.lastIndex = 0;
         while ((match = regex.exec(source)) !== null) {
-          var raw = match[0];
-          var item = buildDateItem(raw, match[1], match[2], match[3], patterns[i].type, match.index, source);
+          var item = buildDateItem(match[0], match[1], match[2], match[3], patterns[i].type, match.index, source);
           if (item) {
             var key = item.normalized + '-' + match.index;
             if (!seen[key]) {
@@ -1239,54 +1263,65 @@
           }
         }
       }
-      found.sort(function (a, b) {
-        return a.diffDays - b.diffDays;
-      });
+      found.sort(function (a, b) { return a.diffDays - b.diffDays; });
       return found;
     }
 
-    function renderExpiryResults(results) {
-      if (!results || !results.length) {
-        byId('expiryResults').innerHTML = '<div class="empty">未识别到日期，请确认文本中是否包含有效期字段。</div>';
+    function guessExpiryTag(context) {
+      var source = getTextSafe(context);
+      if (/(有效期|到期|失效|截止|止于|至)/.test(source)) { return '有效期/截止'; }
+      if (/(开标|递交|投标截止)/.test(source)) { return '开标/递交'; }
+      if (/(授权|委托)/.test(source)) { return '授权日期'; }
+      if (/(签发|发证|核发)/.test(source)) { return '签发日期'; }
+      return '普通日期';
+    }
+
+    function extractExpiry(text) {
+      var items = extractDatesFromText(text);
+      var highCount = 0;
+      var midCount = 0;
+      for (var i = 0; i < items.length; i++) {
+        items[i].tag = guessExpiryTag(items[i].context);
+        if (items[i].diffDays < 30) { highCount++; }
+        else if (items[i].diffDays < 90) { midCount++; }
+      }
+      return {
+        items: items,
+        highCount: highCount,
+        midCount: midCount,
+        attentionCount: highCount + midCount
+      };
+    }
+
+    function renderExpiryResults(result) {
+      if (!result || !result.items.length) {
+        byId('expiryResults').innerHTML = '<div class="empty">未识别到日期，请确认文件文本是否可提取。</div>';
+        setBadge('badge-expiry', '未识别', 'badge-neutral');
         return;
       }
-      var high = 0;
-      var mid = 0;
-      for (var i = 0; i < results.length; i++) {
-        if (results[i].diffDays < 30) { high++; }
-        else if (results[i].diffDays < 90) { mid++; }
-      }
-      var banner = high > 0 ? 'banner-danger' : (mid > 0 ? 'banner-warning' : 'banner-success');
-      var html = '';
-      html += '<div class="banner ' + banner + '">共识别 ' + results.length + ' 个日期 ｜ 紧急/过期 ' + high + ' 个 ｜ 90 天内预警 ' + mid + ' 个</div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>原文日期</th><th>标准化</th><th>剩余天数</th><th>状态</th><th>上下文</th></tr></thead><tbody>';
-      for (var j = 0; j < results.length; j++) {
-        var item = results[j];
-        html += '<tr><td>' + escapeHtml(item.raw) + '</td><td class="mono">' + item.normalized + '</td><td>' + item.diffDays + '</td><td class="' + item.className + '">' + item.status + '</td><td>' + escapeHtml(item.context) + '</td></tr>';
+      var bannerCls = result.highCount > 0 ? 'banner-danger' : (result.midCount > 0 ? 'banner-warning' : 'banner-success');
+      var badgeText = result.attentionCount > 0 ? '⚠️ ' + result.attentionCount + ' 个需关注' : '✅ 无问题';
+      var badgeCls = result.attentionCount > 0 ? 'badge-warning' : 'badge-success';
+      var html = '<div class="banner ' + bannerCls + '">共识别 ' + result.items.length + ' 个日期 ｜ 紧急/过期 ' + result.highCount + ' 个 ｜ 90天内预警 ' + result.midCount + ' 个</div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>原文日期</th><th>标准化</th><th>类型</th><th>剩余天数</th><th>状态</th><th>上下文</th></tr></thead><tbody>';
+      for (var i = 0; i < result.items.length; i++) {
+        var item = result.items[i];
+        html += '<tr><td>' + escapeHtml(item.raw) + '</td><td class="mono">' + escapeHtml(item.normalized) + '</td><td>' + escapeHtml(item.tag) + '</td><td>' + item.diffDays + '</td><td class="' + item.className + '">' + escapeHtml(item.status) + '</td><td>' + escapeHtml(item.context) + '</td></tr>';
       }
       html += '</tbody></table></div>';
       byId('expiryResults').innerHTML = html;
-    }
-
-    function runExpiryCheck() {
-      var text = byId('expiryText').value || APP_STATE.extractedText;
-      if (!getTextSafe(text).replace(/\s+/g, '')) {
-        byId('expiryResults').innerHTML = '<div class="empty">请先粘贴证书文字，或从 Tab1 带入提取文本。</div>';
-        return;
-      }
-      APP_STATE.expiryResults = extractDatesFromText(text);
-      renderExpiryResults(APP_STATE.expiryResults);
+      setBadge('badge-expiry', badgeText, badgeCls);
     }
 
     function collectRegexMatches(text, regex) {
       var source = getTextSafe(text);
-      var matches = [];
+      var items = [];
       var match;
       regex.lastIndex = 0;
       while ((match = regex.exec(source)) !== null) {
-        matches.push({ raw: match[0], index: match.index, context: getSnippet(source, match.index, match[0].length) });
+        items.push({ raw: match[0], index: match.index, context: getSnippet(source, match.index, match[0].length) });
       }
-      return matches;
+      return items;
     }
 
     function checkBracketBalance(text) {
@@ -1311,26 +1346,24 @@
         var item = stack.pop();
         issues.push('左括号“' + item.ch + '”在位置 ' + (item.index + 1) + ' 附近未闭合');
       }
-      var dq = (source.match(/"/g) || []).length;
-      var sq = (source.match(/'/g) || []).length;
-      if (dq % 2 !== 0) { issues.push('英文双引号数量为奇数，可能未成对'); }
-      if (sq % 2 !== 0) { issues.push('英文单引号数量为奇数，可能未成对'); }
+      if (((source.match(/"/g) || []).length % 2) !== 0) { issues.push('英文双引号数量为奇数，可能未成对'); }
+      if (((source.match(/'/g) || []).length % 2) !== 0) { issues.push('英文单引号数量为奇数，可能未成对'); }
       return issues;
     }
 
     function analyzeDateFormats(text) {
-      var found = extractDatesFromText(text);
-      var types = {};
-      for (var i = 0; i < found.length; i++) {
-        types[found[i].type] = (types[found[i].type] || 0) + 1;
+      var items = extractDatesFromText(text);
+      var map = {};
+      for (var i = 0; i < items.length; i++) {
+        map[items[i].type] = (map[items[i].type] || 0) + 1;
       }
-      var typeList = [];
-      for (var k in types) {
-        if (types.hasOwnProperty(k)) {
-          typeList.push({ type: k, count: types[k] });
+      var list = [];
+      for (var key in map) {
+        if (map.hasOwnProperty(key)) {
+          list.push({ type: key, count: map[key] });
         }
       }
-      return { items: found, types: typeList, mixed: typeList.length > 1 };
+      return { items: items, types: list, mixed: list.length > 1 };
     }
 
     function checkRequiredFields(text) {
@@ -1349,45 +1382,35 @@
       ];
       var results = [];
       for (var i = 0; i < fields.length; i++) {
-        results.push({
-          name: fields[i].name,
-          risk: fields[i].risk,
-          exists: fields[i].regex.test(source)
-        });
+        results.push({ name: fields[i].name, risk: fields[i].risk, exists: fields[i].regex.test(source) });
       }
       return results;
     }
 
-    function runFormatAudit(text) {
+    function runFormatCheck(text) {
       var source = getTextSafe(text);
-      var halfWidth = collectRegexMatches(source, /[\u4e00-\u9fa5][,.;:][\u4e00-\u9fa5]/g);
-      var repeated = collectRegexMatches(source, /([，。；：,.!?！？])\1{1,}/g);
-      var fullWidthAscii = collectRegexMatches(source, /[Ａ-Ｚａ-ｚ０-９]+/g);
-      var brackets = checkBracketBalance(source);
-      var dateAnalysis = analyzeDateFormats(source);
-      var requiredFields = checkRequiredFields(source);
       return {
         punctuation: {
-          halfWidth: halfWidth,
-          repeated: repeated,
-          fullWidthAscii: fullWidthAscii,
-          brackets: brackets
+          halfWidth: collectRegexMatches(source, /[\u4e00-\u9fa5][,.;:][\u4e00-\u9fa5]/g),
+          repeated: collectRegexMatches(source, /([，。；：,.!?！？])\1{1,}/g),
+          fullWidthAscii: collectRegexMatches(source, /[Ａ-Ｚａ-ｚ０-９]+/g),
+          brackets: checkBracketBalance(source)
         },
-        dateAnalysis: dateAnalysis,
-        requiredFields: requiredFields
+        dateAnalysis: analyzeDateFormats(source),
+        requiredFields: checkRequiredFields(source)
       };
     }
 
     function buildIssueBlock(title, arr) {
       if (!arr || !arr.length) {
-        return '<div class="card border-success" style="box-shadow:none; background:#f9fffb;"><h4>' + escapeHtml(title) + '</h4><p>未发现问题</p></div>';
+        return '<div class="sub-card"><h4>' + escapeHtml(title) + '</h4><p class="success-text">未发现问题</p></div>';
       }
-      var html = '<div class="card border-warning" style="box-shadow:none; background:#fffdf7;"><h4>' + escapeHtml(title) + '</h4><ul class="list">';
+      var html = '<div class="sub-card"><h4>' + escapeHtml(title) + '</h4><ul>';
       for (var i = 0; i < arr.length && i < 10; i++) {
         html += '<li><span class="mono">' + escapeHtml(arr[i].raw) + '</span> ｜ ' + escapeHtml(arr[i].context) + '</li>';
       }
       if (arr.length > 10) {
-        html += '<li class="muted">其余 ' + (arr.length - 10) + ' 条请人工继续滚动原文复核</li>';
+        html += '<li class="muted">其余 ' + (arr.length - 10) + ' 条请继续人工复核</li>';
       }
       html += '</ul></div>';
       return html;
@@ -1396,6 +1419,7 @@
     function renderFormatResults(result) {
       if (!result) {
         byId('formatResults').innerHTML = '<div class="empty">暂无格式检查结果</div>';
+        setBadge('badge-format', '待扫描', 'badge-neutral');
         return;
       }
       var missingHigh = 0;
@@ -1404,314 +1428,222 @@
         if (!result.requiredFields[i].exists && result.requiredFields[i].risk === '高') { missingHigh++; }
         if (!result.requiredFields[i].exists && result.requiredFields[i].risk === '中') { missingMid++; }
       }
-      var totalPunc = result.punctuation.halfWidth.length + result.punctuation.repeated.length + result.punctuation.fullWidthAscii.length + result.punctuation.brackets.length;
-      var bannerClass = missingHigh > 0 ? 'banner-danger' : ((missingMid > 0 || result.dateAnalysis.mixed || totalPunc > 0) ? 'banner-warning' : 'banner-success');
-      var html = '';
-      html += '<div class="banner ' + bannerClass + '">标点问题 ' + totalPunc + ' 项 ｜ 日期格式类型 ' + result.dateAnalysis.types.length + ' 种 ｜ 高风险缺字段 ' + missingHigh + ' 项</div>';
-
-      html += '<details open><summary>① 标点符号规范</summary>';
-      html += '<ul class="list">';
-      html += '<li>中文之间半角标点：' + result.punctuation.halfWidth.length + ' 处</li>';
-      html += '<li>重复标点：' + result.punctuation.repeated.length + ' 处</li>';
-      html += '<li>全角英文/数字：' + result.punctuation.fullWidthAscii.length + ' 处</li>';
-      html += '<li>括号/引号未匹配：' + result.punctuation.brackets.length + ' 处</li>';
-      html += '</ul>';
-      html += buildIssueBlock('中文之间半角标点', result.punctuation.halfWidth);
-      html += buildIssueBlock('重复标点', result.punctuation.repeated);
-      html += buildIssueBlock('全角英文/数字', result.punctuation.fullWidthAscii);
+      var puncIssues = result.punctuation.halfWidth.length + result.punctuation.repeated.length + result.punctuation.fullWidthAscii.length + result.punctuation.brackets.length;
+      var totalIssues = missingHigh + missingMid + puncIssues + (result.dateAnalysis.mixed ? 1 : 0);
+      var bannerCls = missingHigh > 0 ? 'banner-danger' : (totalIssues > 0 ? 'banner-warning' : 'banner-success');
+      var badgeText = totalIssues > 0 ? (missingHigh > 0 ? '🔴 ' + totalIssues + ' 项' : '⚠️ ' + totalIssues + ' 项') : '✅ 无问题';
+      var badgeCls = totalIssues > 0 ? (missingHigh > 0 ? 'badge-danger' : 'badge-warning') : 'badge-success';
+      var html = '<div class="banner ' + bannerCls + '">标点问题 ' + puncIssues + ' 项 ｜ 日期格式类型 ' + result.dateAnalysis.types.length + ' 种 ｜ 高风险缺字段 ' + missingHigh + ' 项</div>';
+      html += '<div class="grid-two">';
+      html += '<div>' + buildIssueBlock('中文之间半角标点', result.punctuation.halfWidth) + buildIssueBlock('重复标点', result.punctuation.repeated) + '</div>';
+      html += '<div>' + buildIssueBlock('全角英文/数字', result.punctuation.fullWidthAscii);
       if (result.punctuation.brackets.length) {
-        html += '<div class="card border-warning" style="box-shadow:none; background:#fffdf7;"><h4>括号/引号问题</h4><ul class="list">';
+        html += '<div class="sub-card"><h4>括号 / 引号问题</h4><ul>';
         for (var b = 0; b < result.punctuation.brackets.length; b++) {
           html += '<li>' + escapeHtml(result.punctuation.brackets[b]) + '</li>';
         }
         html += '</ul></div>';
+      } else {
+        html += '<div class="sub-card"><h4>括号 / 引号问题</h4><p class="success-text">未发现问题</p></div>';
       }
-      html += '</details>';
-
-      html += '<details open><summary>② 日期格式统一性</summary>';
+      html += '</div></div>';
+      html += '<div class="sub-card"><h4>日期格式统一性</h4>';
       if (!result.dateAnalysis.items.length) {
-        html += '<div class="empty">未识别到日期格式</div>';
+        html += '<p class="muted">未识别到日期格式</p>';
       } else {
         html += '<p>' + (result.dateAnalysis.mixed ? '<span class="warning-text">发现多种日期格式，建议统一。</span>' : '<span class="success-text">日期格式相对统一。</span>') + '</p>';
-        html += '<div style="margin-bottom:8px;">';
-        for (var t = 0; t < result.dateAnalysis.types.length; t++) {
-          html += '<span class="status-pill">' + escapeHtml(result.dateAnalysis.types[t].type) + ' × ' + result.dateAnalysis.types[t].count + '</span>';
+        for (var d = 0; d < result.dateAnalysis.types.length; d++) {
+          html += '<span class="chip chip-neutral">' + escapeHtml(result.dateAnalysis.types[d].type) + ' × ' + result.dateAnalysis.types[d].count + '</span>';
         }
-        html += '</div>';
       }
-      html += '</details>';
-
-      html += '<details open><summary>③ 关键字段完整性</summary>';
-      html += '<div class="table-wrap"><table><thead><tr><th>字段</th><th>风险</th><th>状态</th></tr></thead><tbody>';
+      html += '</div>';
+      html += '<div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th>关键字段</th><th>风险</th><th>状态</th></tr></thead><tbody>';
       for (var f = 0; f < result.requiredFields.length; f++) {
         var field = result.requiredFields[f];
-        html += '<tr><td>' + escapeHtml(field.name) + '</td><td>' + escapeHtml(field.risk) + '</td><td class="' + (field.exists ? 'success-text' : (field.risk === '高' ? 'danger-text' : (field.risk === '中' ? 'warning-text' : 'info-text'))) + '">' + (field.exists ? '已发现' : '缺失') + '</td></tr>';
+        var cls = field.exists ? 'success-text' : (field.risk === '高' ? 'danger-text' : (field.risk === '中' ? 'warning-text' : 'info-text'));
+        html += '<tr><td>' + escapeHtml(field.name) + '</td><td>' + escapeHtml(field.risk) + '</td><td class="' + cls + '">' + (field.exists ? '已发现' : '缺失') + '</td></tr>';
       }
       html += '</tbody></table></div>';
-      html += '</details>';
       byId('formatResults').innerHTML = html;
+      setBadge('badge-format', badgeText, badgeCls);
     }
 
-    function runFormatCheck() {
-      var text = byId('formatText').value || APP_STATE.extractedText;
-      if (!getTextSafe(text).replace(/\s+/g, '')) {
-        byId('formatResults').innerHTML = '<div class="empty">请先粘贴文本，或从 Tab1 带入提取文字。</div>';
-        return;
-      }
-      APP_STATE.formatResults = runFormatAudit(text);
+    function runAllChecks() {
+      setProgress(72, '正在整理文档信息…', '第 1/5 项', true);
+      renderDocInfo();
+
+      setProgress(80, '正在扫描废标风险…', '第 2/5 项', true);
+      APP_STATE.scanResults = scanRiskKeywords(APP_STATE.extractedText);
+      renderRiskResults(APP_STATE.scanResults);
+
+      setProgress(86, '正在分析金额大小写…', '第 3/5 项', true);
+      APP_STATE.priceResults = autoExtractPrices(APP_STATE.extractedText);
+      renderPriceResults(APP_STATE.priceResults);
+
+      setProgress(92, '正在提取有效期日期…', '第 4/5 项', true);
+      APP_STATE.expiryResults = extractExpiry(APP_STATE.extractedText);
+      renderExpiryResults(APP_STATE.expiryResults);
+
+      setProgress(97, '正在检查格式规范…', '第 5/5 项', true);
+      APP_STATE.formatResults = runFormatCheck(APP_STATE.extractedText);
       renderFormatResults(APP_STATE.formatResults);
+
+      openAllSections();
+      byId('resultsSection').classList.remove('hidden');
+      setProgress(100, '扫描完成', '已自动完成全部 5 项检查', false);
     }
 
-    function useExtractedText(targetId) {
-      if (!APP_STATE.extractedText) {
-        return;
-      }
-      byId(targetId).value = APP_STATE.extractedText;
-    }
-
-    function ensureDerivedResults() {
-      var riskText = byId('riskText').value || APP_STATE.extractedText;
-      var expiryText = byId('expiryText').value || APP_STATE.extractedText;
-      var formatText = byId('formatText').value || APP_STATE.extractedText;
-      if (!APP_STATE.scanResults && getTextSafe(riskText).replace(/\s+/g, '')) {
-        APP_STATE.scanResults = scanRiskKeywords(riskText);
-      }
-      if (!APP_STATE.expiryResults && getTextSafe(expiryText).replace(/\s+/g, '')) {
-        APP_STATE.expiryResults = extractDatesFromText(expiryText);
-      }
-      if (!APP_STATE.formatResults && getTextSafe(formatText).replace(/\s+/g, '')) {
-        APP_STATE.formatResults = runFormatAudit(formatText);
-      }
-      if (!APP_STATE.priceResults) {
-        APP_STATE.priceResults = {
-          expected: convertMoneyToChinese(byId('amountNumber').value),
-          actual: byId('amountUpper').value,
-          match: normalizeUppercase(convertMoneyToChinese(byId('amountNumber').value)) === normalizeUppercase(byId('amountUpper').value),
-          diffInfo: evaluatePriceDiff()
-        };
-      } else {
-        APP_STATE.priceResults.diffInfo = evaluatePriceDiff();
-      }
-    }
-
-    function buildRiskReportSection(result) {
-      var html = '<p>总体判断：' + escapeHtml(result.overall) + '</p>';
-      html += '<p>高风险：' + result.summary['高'] + ' ｜ 中风险：' + result.summary['中'] + ' ｜ 提示：' + result.summary['提示'] + '</p>';
-      if (result.hits.length) {
-        html += '<ul class="list">';
-        for (var i = 0; i < result.hits.length && i < 8; i++) {
-          html += '<li>' + escapeHtml(result.hits[i].level + '｜' + result.hits[i].keyword + '｜' + result.hits[i].context) + '</li>';
+    function ensureTesseractLoaded() {
+      return new Promise(function (resolve, reject) {
+        if (window.Tesseract) {
+          resolve();
+          return;
         }
-        html += '</ul>';
-      }
-      return html;
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+        script.onload = resolve;
+        script.onerror = function () { reject(new Error('Tesseract.js 加载失败')); };
+        document.body.appendChild(script);
+      });
     }
 
-    function buildRiskReportText(result) {
-      var txt = '总体判断：' + result.overall + '\n';
-      txt += '高风险：' + result.summary['高'] + ' ｜ 中风险：' + result.summary['中'] + ' ｜ 提示：' + result.summary['提示'] + '\n';
-      for (var i = 0; i < result.hits.length && i < 12; i++) {
-        txt += '- ' + result.hits[i].level + '｜' + result.hits[i].keyword + '｜' + result.hits[i].context + '\n';
+    async function processPdf(buffer) {
+      APP_STATE.currentFileType = 'pdf';
+      setProgress(8, '正在打开 PDF…', '准备提取每一页文字', true);
+      var pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      APP_STATE.totalPages = pdf.numPages;
+      APP_STATE.totalPagesLabel = pdf.numPages + '页';
+      APP_STATE.pages = [];
+      var combined = [];
+      for (var i = 1; i <= pdf.numPages; i++) {
+        setProgress(10 + Math.round((i - 1) / Math.max(1, pdf.numPages) * 55), '正在解析 PDF 第 ' + i + ' / ' + pdf.numPages + ' 页…', '自动提取文字中', true);
+        var page = await pdf.getPage(i);
+        var textContent = await page.getTextContent();
+        var items = [];
+        for (var j = 0; j < textContent.items.length; j++) {
+          items.push(textContent.items[j].str);
+        }
+        var joined = items.join(' ').replace(/\s+/g, ' ').trim();
+        APP_STATE.pages.push({ page: i, text: joined, charCount: countChars(joined) });
+        combined.push(joined);
       }
-      return txt;
+      APP_STATE.extractedText = combined.join('\n\n').trim();
     }
 
-    function buildReportData() {
-      ensureDerivedResults();
-      var totalIssues = 0;
-      var high = 0;
-      var medium = 0;
-      var sections = [];
+    async function processDocx(buffer) {
+      APP_STATE.currentFileType = 'docx';
+      setProgress(12, '正在提取 DOCX 文字…', '将按字符数估算页数', true);
+      var result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      APP_STATE.extractedText = getTextSafe(result.value || result.text || '').trim();
+      var charCount = countChars(APP_STATE.extractedText);
+      APP_STATE.totalPages = Math.max(1, Math.round(charCount / 500));
+      APP_STATE.totalPagesLabel = '约' + APP_STATE.totalPages + '页（估算）';
+      APP_STATE.pages = [{ page: 1, text: APP_STATE.extractedText, charCount: charCount }];
+    }
 
-      if (APP_STATE.scanResults) {
-        totalIssues += APP_STATE.scanResults.total;
-        high += APP_STATE.scanResults.summary['高'];
-        medium += APP_STATE.scanResults.summary['中'];
-        sections.push({
-          title: '废标风险扫描',
-          html: buildRiskReportSection(APP_STATE.scanResults),
-          text: buildRiskReportText(APP_STATE.scanResults)
-        });
-      }
-
-      if (APP_STATE.priceResults) {
-        var priceHtml = '';
-        var priceText = '';
-        if (APP_STATE.priceResults.expected) {
-          if (!APP_STATE.priceResults.match) {
-            totalIssues += 1;
-            high += 1;
+    async function processImage(file) {
+      APP_STATE.currentFileType = 'image';
+      APP_STATE.totalPages = 1;
+      APP_STATE.totalPagesLabel = '1页';
+      APP_STATE.imagePreviewUrl = await readFileAsDataURL(file);
+      setProgress(8, '正在加载 OCR 引擎…', '首次使用图片识别时需要从 CDN 加载 Tesseract.js', true);
+      await ensureTesseractLoaded();
+      var baseProgress = 18;
+      APP_STATE.extractedText = '';
+      var res = await Tesseract.recognize(file, 'chi_sim+eng', {
+        logger: function (msg) {
+          if (msg && msg.progress != null) {
+            var pct = baseProgress + Math.round(msg.progress * 50);
+            setProgress(pct, '正在执行图片 OCR…', (msg.status || '处理中') + ' · ' + Math.round(msg.progress * 100) + '%', true);
           }
-          priceHtml += '<p>大小写校验：' + (APP_STATE.priceResults.match ? '<span class="success-text">一致</span>' : '<span class="danger-text">不一致</span>') + '</p>';
-          priceHtml += '<p>正确大写：' + escapeHtml(APP_STATE.priceResults.expected || '-') + '</p>';
-          priceText += '大小写校验：' + (APP_STATE.priceResults.match ? '一致' : '不一致') + '\n';
-          priceText += '正确大写：' + (APP_STATE.priceResults.expected || '-') + '\n';
         }
-        if (APP_STATE.priceResults.diffInfo) {
-          if (APP_STATE.priceResults.diffInfo.riskLevel === '高') {
-            totalIssues += 1;
-            high += 1;
-          } else if (APP_STATE.priceResults.diffInfo.riskLevel === '中') {
-            totalIssues += 1;
-            medium += 1;
-          }
-          priceHtml += '<p>价格偏差：' + escapeHtml(APP_STATE.priceResults.diffInfo.verdict) + '（' + APP_STATE.priceResults.diffInfo.diff.toFixed(2) + '%）</p>';
-          priceText += '价格偏差：' + APP_STATE.priceResults.diffInfo.verdict + '（' + APP_STATE.priceResults.diffInfo.diff.toFixed(2) + '%）\n';
-        }
-        if (priceHtml) {
-          sections.push({ title: '价格大小写校验', html: priceHtml, text: priceText });
-        }
-      }
+      });
+      APP_STATE.extractedText = getTextSafe(res && res.data ? res.data.text : '').trim();
+      APP_STATE.pages = [{ page: 1, text: APP_STATE.extractedText, charCount: countChars(APP_STATE.extractedText) }];
+    }
 
-      if (APP_STATE.expiryResults && APP_STATE.expiryResults.length) {
-        var expired = 0;
-        var warning = 0;
-        for (var i = 0; i < APP_STATE.expiryResults.length; i++) {
-          if (APP_STATE.expiryResults[i].diffDays < 30) { expired++; }
-          else if (APP_STATE.expiryResults[i].diffDays < 90) { warning++; }
+    async function handleSelectedFile(file) {
+      if (!file) { return; }
+      resetForNewFile(file);
+      try {
+        var lowerName = getTextSafe(file.name).toLowerCase();
+        if (/\.pdf$/.test(lowerName)) {
+          await processPdf(await readFileAsArrayBuffer(file));
+        } else if (/\.docx$/.test(lowerName)) {
+          await processDocx(await readFileAsArrayBuffer(file));
+        } else if (/\.(png|jpg|jpeg|bmp|webp)$/.test(lowerName) || (file.type && file.type.indexOf('image/') === 0)) {
+          await processImage(file);
+        } else {
+          throw new Error('暂不支持该文件格式，请上传 PDF / DOCX / 图片。');
         }
-        totalIssues += expired + warning;
-        high += expired;
-        medium += warning;
-        sections.push({
-          title: '资质有效期',
-          html: '<p>识别日期：' + APP_STATE.expiryResults.length + ' 个</p><p>紧急/过期：' + expired + ' 个，90 天内预警：' + warning + ' 个</p>',
-          text: '识别日期：' + APP_STATE.expiryResults.length + ' 个\n紧急/过期：' + expired + ' 个，90 天内预警：' + warning + ' 个\n'
+
+        if (!APP_STATE.extractedText || !APP_STATE.extractedText.replace(/\s+/g, '')) {
+          throw new Error('未能提取到有效文字，请检查文件是否为扫描图、加密 PDF 或空白页。');
+        }
+
+        runAllChecks();
+      } catch (err) {
+        console.error(err);
+        byId('resultsSection').classList.add('hidden');
+        setProgress(100, '处理失败', (err && err.message) ? err.message : '未知错误', false);
+      }
+    }
+
+    function bindUploadZone() {
+      var uploadZone = byId('uploadZone');
+      var fileInput = byId('fileInput');
+      uploadZone.addEventListener('click', function () { fileInput.click(); });
+      uploadZone.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
+      fileInput.addEventListener('change', function (e) {
+        if (e.target.files && e.target.files[0]) {
+          handleSelectedFile(e.target.files[0]);
+        }
+      });
+      ['dragenter', 'dragover'].forEach(function (evtName) {
+        uploadZone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadZone.classList.add('dragover');
         });
-      }
-
-      if (APP_STATE.formatResults) {
-        var missingHigh = 0;
-        var missingMid = 0;
-        for (var j = 0; j < APP_STATE.formatResults.requiredFields.length; j++) {
-          var rf = APP_STATE.formatResults.requiredFields[j];
-          if (!rf.exists && rf.risk === '高') { missingHigh++; }
-          else if (!rf.exists && rf.risk === '中') { missingMid++; }
-        }
-        var pIssues = APP_STATE.formatResults.punctuation.halfWidth.length + APP_STATE.formatResults.punctuation.repeated.length + APP_STATE.formatResults.punctuation.fullWidthAscii.length + APP_STATE.formatResults.punctuation.brackets.length;
-        totalIssues += missingHigh + missingMid + pIssues + (APP_STATE.formatResults.dateAnalysis.mixed ? 1 : 0);
-        high += missingHigh;
-        medium += missingMid + pIssues + (APP_STATE.formatResults.dateAnalysis.mixed ? 1 : 0);
-        sections.push({
-          title: '格式规范检查',
-          html: '<p>标点问题：' + pIssues + ' 项</p><p>日期格式混用：' + (APP_STATE.formatResults.dateAnalysis.mixed ? '是' : '否') + '</p><p>高风险缺字段：' + missingHigh + ' 项，中风险缺字段：' + missingMid + ' 项</p>',
-          text: '标点问题：' + pIssues + ' 项\n日期格式混用：' + (APP_STATE.formatResults.dateAnalysis.mixed ? '是' : '否') + '\n高风险缺字段：' + missingHigh + ' 项，中风险缺字段：' + missingMid + ' 项\n'
+      });
+      ['dragleave', 'dragend'].forEach(function (evtName) {
+        uploadZone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadZone.classList.remove('dragover');
         });
-      }
-
-      var overall = '绿色';
-      var banner = 'banner-success';
-      var desc = '暂未发现明显高风险，可继续人工复核关键页。';
-      if (high > 0) {
-        overall = '红色';
-        banner = 'banner-danger';
-        desc = '发现高风险项，建议在提交前逐项整改。';
-      } else if (medium > 0) {
-        overall = '黄色';
-        banner = 'banner-warning';
-        desc = '存在中风险/提醒项，建议统一格式并补齐字段。';
-      }
-
-      return {
-        totalIssues: totalIssues,
-        high: high,
-        medium: medium,
-        overall: overall,
-        banner: banner,
-        desc: desc,
-        sections: sections
-      };
+      });
+      uploadZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.remove('dragover');
+        var file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+        if (file) { handleSelectedFile(file); }
+      });
     }
 
-    function buildDownloadText(data) {
-      var lines = [];
-      lines.push('标书CT扫描仪 - 综合报告');
-      lines.push('生成时间：' + new Date().toLocaleString());
-      lines.push('文件名：' + (APP_STATE.fileName || '未上传文件'));
-      lines.push('综合风险：' + data.overall);
-      lines.push('总问题数：' + data.totalIssues + '；高风险：' + data.high + '；中风险：' + data.medium);
-      lines.push('结论：' + data.desc);
-      lines.push('');
-      for (var i = 0; i < data.sections.length; i++) {
-        lines.push('【' + data.sections[i].title + '】');
-        lines.push(data.sections[i].text || '');
-      }
-      lines.push('说明：所有文件处理均在浏览器本地完成，未上传至任何服务器。');
-      return lines.join('\n');
-    }
-
-    function renderComprehensiveReport() {
-      var data = buildReportData();
-      var html = '';
-      html += '<div class="banner ' + data.banner + '">综合风险：' + data.overall + ' ｜ 总问题数 ' + data.totalIssues + ' ｜ 高风险 ' + data.high + ' ｜ 中风险 ' + data.medium + '</div>';
-      html += '<div class="stats-grid">';
-      html += '<div class="stat-box"><div class="stat-label">文件</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.fileName || '未上传文件') + '</div></div>';
-      html += '<div class="stat-box"><div class="stat-label">总问题数</div><div class="stat-value">' + data.totalIssues + '</div></div>';
-      html += '<div class="stat-box"><div class="stat-label">高风险</div><div class="stat-value danger-text">' + data.high + '</div></div>';
-      html += '<div class="stat-box"><div class="stat-label">中风险</div><div class="stat-value warning-text">' + data.medium + '</div></div>';
-      html += '</div>';
-      html += '<p style="margin-top:10px;">' + escapeHtml(data.desc) + '</p>';
-      for (var i = 0; i < data.sections.length; i++) {
-        html += '<details open><summary>' + escapeHtml(data.sections[i].title) + '</summary><div style="padding-top:8px;">' + data.sections[i].html + '</div></details>';
-      }
-      byId('reportResults').innerHTML = html;
-      APP_STATE.reportText = buildDownloadText(data);
-    }
-
-    function downloadReport() {
-      if (!APP_STATE.reportText) {
-        renderComprehensiveReport();
-      }
-      if (!APP_STATE.reportText) {
-        return;
-      }
-      var blob = new Blob([APP_STATE.reportText], { type: 'text/plain;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      var baseName = APP_STATE.fileName ? APP_STATE.fileName.replace(/\.[^.]+$/, '') : '标书综合报告';
-      a.href = url;
-      a.download = baseName + '_综合报告.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () {
-        URL.revokeObjectURL(url);
-      }, 1000);
+    function bindManualPriceInputs() {
+      byId('amountNumber').addEventListener('input', function () {
+        updateExpectedUpper();
+        validateUppercaseAmount(false);
+      });
+      byId('amountUpper').addEventListener('input', function () {
+        validateUppercaseAmount(false);
+      });
+      byId('controlPrice').addEventListener('input', evaluatePriceDiff);
+      byId('bidPrice').addEventListener('input', evaluatePriceDiff);
     }
 
     function bindEvents() {
-      bindTabEvents();
-      byId('fileInput').addEventListener('change', handleFileUpload);
-      byId('clearBtn').addEventListener('click', resetState);
-      byId('startOcrBtn').addEventListener('click', startImageOcr);
-      byId('scanRiskBtn').addEventListener('click', runRiskScan);
-      byId('scanExpiryBtn').addEventListener('click', runExpiryCheck);
-      byId('scanFormatBtn').addEventListener('click', runFormatCheck);
-      byId('useExtractedRiskBtn').addEventListener('click', function () { useExtractedText('riskText'); });
-      byId('useExtractedExpiryBtn').addEventListener('click', function () { useExtractedText('expiryText'); });
-      byId('useExtractedFormatBtn').addEventListener('click', function () { useExtractedText('formatText'); });
-      byId('amountNumber').addEventListener('input', function () {
-        updateExpectedUpper();
-        APP_STATE.priceResults = null;
-      });
-      byId('amountUpper').addEventListener('input', function () {
-        APP_STATE.priceResults = null;
-      });
-      byId('validateAmountBtn').addEventListener('click', validateUppercaseAmount);
-      byId('controlPrice').addEventListener('input', function () {
-        APP_STATE.priceResults = null;
-        evaluatePriceDiff();
-      });
-      byId('bidPrice').addEventListener('input', function () {
-        APP_STATE.priceResults = null;
-        evaluatePriceDiff();
-      });
-      byId('generateReportBtn').addEventListener('click', renderComprehensiveReport);
-      byId('downloadReportBtn').addEventListener('click', downloadReport);
-      evaluatePriceDiff();
-      updateExpectedUpper();
-      updateUseExtractedButtons();
-      setStatus('等待上传文件。', false);
+      bindUploadZone();
+      bindManualPriceInputs();
+      byId('clearBtn').addEventListener('click', clearAll);
+      clearAll();
     }
 
     document.addEventListener('DOMContentLoaded', bindEvents);
