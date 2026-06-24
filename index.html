@@ -530,6 +530,31 @@
       </details>
     </section>
 
+    <!-- ===== 串标检测 ===== -->
+    <section class="card" id="collusionCard" style="margin-top:20px">
+      <h2>🔍 多标书串标检测</h2>
+      <p class="muted small">同时上传 2~10 份标书，自动检测联系电话 / 联系人 / 法定代表人重复、文本雷同、报价梯度等串标信号，并给出综合评分排名。⚠️ 结果仅供内部辅助参考，不构成法律认定依据。全程本地处理，文件不上传服务器。</p>
+      <div id="collusionUploadZone" class="upload-zone" tabindex="0" role="button" aria-label="上传多份标书">
+        <div class="upload-icon">📂</div>
+        <div class="upload-title">点击或拖拽上传多份标书</div>
+        <div class="upload-hint">支持 PDF / DOCX / 图片 · 每份代表一个投标方 · 建议以投标方名称命名文件</div>
+        <input id="collusionFileInput" type="file" accept=".pdf,.docx,image/*,.bmp,.webp" class="hidden" multiple>
+      </div>
+      <div id="collusionFileList" style="margin-top:10px;"></div>
+      <div class="action-row">
+        <button id="collusionRunBtn" class="btn btn-primary" type="button" disabled>🔍 开始串标检测</button>
+        <button id="collusionClearBtn" class="btn btn-light" type="button">清空</button>
+      </div>
+      <div id="collusionProgress" class="hidden" style="margin-top:12px;">
+        <div class="progress-wrap">
+          <span class="spinner"></span>
+          <strong id="collusionProgressText">提取文本中…</strong>
+        </div>
+        <div class="progress"><div id="collusionProgressBar" class="progress-bar" style="width:0%"></div></div>
+      </div>
+      <div id="collusionResults" style="margin-top:16px;"></div>
+    </section>
+
     <div class="footer-note">关闭页面即清空本地内存中的提取内容 · 建议最终仍人工复核签章页、报价页、资格页</div>
   </div>
 
@@ -1739,9 +1764,316 @@
       byId('bidPrice').addEventListener('input', evaluatePriceDiff);
     }
 
+    // ===== 串标检测 =====
+    var COLLUSION_STATE = { files: [], running: false };
+
+    function extractPriceFromText(text) {
+      var priorityPats = [
+        /(?:投标总价|报价合计|合计|总价)[^\d]{0,10}([\d,，]+(?:\.\d{1,2})?)/,
+        /([\d,，]+(?:\.\d{1,2})?)\s*元\s*(?:整|人民币)/
+      ];
+      for (var i = 0; i < priorityPats.length; i++) {
+        var m = text.match(priorityPats[i]);
+        if (m) { var v = parseFloat(m[1].replace(/[,，]/g,'')); if (v > 1000) return v; }
+      }
+      var amounts = (text.match(/\d{4,}(?:\.\d{1,2})?/g) || []).map(parseFloat).filter(function(v){ return v > 1000 && v < 1e12; });
+      return amounts.length ? Math.max.apply(null, amounts) : null;
+    }
+
+    function extractCompanyFromText(text) {
+      var m = text.match(/([\u4e00-\u9fa5a-zA-Z0-9（）]{2,25}(?:有限公司|股份有限公司|集团有限公司|有限责任公司))/)
+           || text.match(/投标(?:人|方|单位)[：:：\s]*([\u4e00-\u9fa5a-zA-Z0-9（）]{2,25})/);
+      return m ? m[1].trim() : '';
+    }
+
+    function extractPhoneFromText(text) {
+      var m = text.match(/1[3-9]\d{9}/) || text.match(/0\d{2,3}[\-\s]\d{7,8}/);
+      return m ? m[0] : '';
+    }
+
+    function extractContactFromText(text) {
+      var m = text.match(/联系人[：:：\s]*([\u4e00-\u9fa5]{2,4})/);
+      return m ? m[1] : '';
+    }
+
+    function extractLegalRepFromText(text) {
+      var m = text.match(/法定代表人[：:：\s]*([\u4e00-\u9fa5]{2,4})/);
+      return m ? m[1] : '';
+    }
+
+    function bigramSimilarity(a, b) {
+      var sa = a.slice(0, 3000).trim(), sb = b.slice(0, 3000).trim();
+      if (!sa || !sb) return 0;
+      var bg1 = {}, bg2 = {};
+      for (var i = 0; i < sa.length - 1; i++) { var k = sa.slice(i,i+2); bg1[k] = (bg1[k]||0)+1; }
+      for (var j = 0; j < sb.length - 1; j++) { var k2 = sb.slice(j,j+2); bg2[k2] = (bg2[k2]||0)+1; }
+      var inter = 0;
+      Object.keys(bg1).forEach(function(k){ if (bg2[k]) inter += Math.min(bg1[k], bg2[k]); });
+      var total = (sa.length-1) + (sb.length-1);
+      return total > 0 ? (2*inter)/total : 0;
+    }
+
+    function findUniquePhrases(text, minLen) {
+      return text.split(/[。！？；\n]/).map(function(s){ return s.trim(); })
+                 .filter(function(s){ return s.length >= minLen && s.length <= 60; });
+    }
+
+    function detectCollusion(bids) {
+      var flags = [];
+      if (bids.length < 2) return flags;
+
+      // 1. 联系电话重复
+      var phoneMap = {};
+      bids.forEach(function(b){ if (b.phone) { phoneMap[b.phone] = phoneMap[b.phone]||[]; phoneMap[b.phone].push(b.name); } });
+      Object.keys(phoneMap).forEach(function(ph){ if (phoneMap[ph].length>1) flags.push({ type:'联系电话重复', level:'高', desc:'以下 '+phoneMap[ph].length+' 份标书使用相同联系电话「'+ph+'」', involved:phoneMap[ph], evidence:'联系电话：'+ph }); });
+
+      // 2. 联系人重复
+      var personMap = {};
+      bids.forEach(function(b){ if (b.contact) { personMap[b.contact] = personMap[b.contact]||[]; personMap[b.contact].push(b.name); } });
+      Object.keys(personMap).forEach(function(p){ if (personMap[p].length>1) flags.push({ type:'联系人重复', level:'高', desc:'以下 '+personMap[p].length+' 份标书联系人均为「'+p+'」', involved:personMap[p], evidence:'联系人：'+p }); });
+
+      // 3. 法定代表人重复
+      var repMap = {};
+      bids.forEach(function(b){ if (b.legalRep) { repMap[b.legalRep] = repMap[b.legalRep]||[]; repMap[b.legalRep].push(b.name); } });
+      Object.keys(repMap).forEach(function(rep){ if (repMap[rep].length>1) flags.push({ type:'法定代表人重复', level:'高', desc:'以下 '+repMap[rep].length+' 份标书法定代表人均为「'+rep+'」', involved:repMap[rep], evidence:'法定代表人：'+rep }); });
+
+      // 4. 文本两两相似度
+      for (var i = 0; i < bids.length; i++) {
+        for (var j = i+1; j < bids.length; j++) {
+          var sim = bigramSimilarity(bids[i].text, bids[j].text);
+          if (sim >= 0.80) flags.push({ type:'文本高度雷同', level:'高', desc:'「'+bids[i].name+'」与「'+bids[j].name+'」文本相似度 '+Math.round(sim*100)+'%（≥80%），疑似同一模板修改', involved:[bids[i].name, bids[j].name], evidence:'相似度：'+Math.round(sim*100)+'%' });
+          else if (sim >= 0.60) flags.push({ type:'文本相似度偏高', level:'中', desc:'「'+bids[i].name+'」与「'+bids[j].name+'」文本相似度 '+Math.round(sim*100)+'%（正常竞争对手通常<50%）', involved:[bids[i].name, bids[j].name], evidence:'相似度：'+Math.round(sim*100)+'%' });
+        }
+      }
+
+      // 5. 相同特征句式（≥12字）
+      var phraseMap = {};
+      bids.forEach(function(b){ findUniquePhrases(b.text, 12).forEach(function(ph){ phraseMap[ph] = phraseMap[ph]||[]; phraseMap[ph].push(b.name); }); });
+      var shared = Object.keys(phraseMap).filter(function(ph){ return phraseMap[ph].length>1; });
+      if (shared.length >= 3) {
+        var allInv = [];
+        shared.forEach(function(ph){ phraseMap[ph].forEach(function(n){ if (allInv.indexOf(n)<0) allInv.push(n); }); });
+        flags.push({ type:'相同特征句式', level:'中', desc:'多份标书共享 '+shared.length+' 处相同句式（≥12字），疑似共用同一模板', involved:allInv, evidence:'例：'+shared.slice(0,2).map(function(p){ return '「'+(p.length>20?p.slice(0,20)+'…':p)+'」'; }).join('；') });
+      }
+
+      // 6. 报价梯度规律（≥3份）
+      var prices = bids.filter(function(b){ return b.price&&b.price>0; }).map(function(b){ return {name:b.name,price:b.price}; });
+      if (prices.length >= 3) {
+        prices.sort(function(a,b){ return a.price-b.price; });
+        var ratios = [];
+        for (var k = 1; k < prices.length; k++) ratios.push(prices[k].price/prices[k-1].price);
+        var maxR = Math.max.apply(null,ratios), minR = Math.min.apply(null,ratios), avgR = ratios.reduce(function(a,b){return a+b;},0)/ratios.length;
+        if (maxR-minR < 0.05 && Math.abs(avgR-1.05) < 0.08) flags.push({ type:'报价梯度规律', level:'高', desc:'各标书报价呈均匀梯度分布（'+prices.map(function(p){ return '¥'+p.price.toLocaleString(); }).join('、')+'），陪标特征明显', involved:prices.map(function(p){return p.name;}), evidence:'价格比例：'+ratios.map(function(r){return r.toFixed(3);}).join('、') });
+      }
+
+      return flags;
+    }
+
+    function scoreOneBid(bid, allPrices) {
+      var FIELDS = ['公司名称','法定代表人','注册资本','营业执照','联系电话','联系人','报价','有效期','资质'];
+      var fieldScore = Math.round(FIELDS.filter(function(f){ return bid.text.indexOf(f)>=0; }).length / FIELDS.length * 100);
+      var qualScore = /过期|失效|已过期/.test(bid.text) ? 30 : /即将到期|临近到期/.test(bid.text) ? 65 : 80;
+      var puncErr = (bid.text.match(/[A-Za-z][，。！？；]/g)||[]).length + (bid.text.match(/[，。！？；]{2,}/g)||[]).length;
+      var fmtScore = Math.max(0, 100 - puncErr*5);
+      var nameScore = /名称.*不.*一致|不一致.*名称/.test(bid.text) ? 60 : 90;
+      var priceScore = 50;
+      if (bid.price && allPrices.length > 1) {
+        var mn = Math.min.apply(null,allPrices), mx = Math.max.apply(null,allPrices);
+        priceScore = mx>mn ? Math.round(100-(bid.price-mn)/(mx-mn)*80) : 80;
+        priceScore = Math.max(10, Math.min(100, priceScore));
+      }
+      var total = Math.round(priceScore*0.35 + fieldScore*0.25 + qualScore*0.20 + fmtScore*0.10 + nameScore*0.10);
+      var strengths = [], weaknesses = [];
+      if (priceScore>=80) strengths.push('💰 报价有竞争优势'); else if (priceScore<40) weaknesses.push('💰 报价偏高');
+      if (fieldScore>=85) strengths.push('📋 关键字段完整'); else if (fieldScore<65) weaknesses.push('📋 关键字段缺失');
+      if (qualScore>=80) strengths.push('✅ 资质证件完善'); else if (qualScore<50) weaknesses.push('⚠️ 资质存在过期');
+      if (fmtScore>=90) strengths.push('📝 格式规范'); else if (fmtScore<70) weaknesses.push('📝 格式问题较多');
+      var rec = total>=80?'强烈推荐':total>=65?'建议修改后提交':total>=50?'需重点优化':'存在重大问题';
+      return { fieldScore:fieldScore, qualScore:qualScore, fmtScore:fmtScore, nameScore:nameScore, priceScore:priceScore, total:total, strengths:strengths, weaknesses:weaknesses, rec:rec };
+    }
+
+    function renderCollusionResults(bids, flags, scores) {
+      var highFlags = flags.filter(function(f){return f.level==='高';}).length;
+      var midFlags  = flags.filter(function(f){return f.level==='中';}).length;
+      var riskLevel = highFlags>=2?'高':(highFlags>=1||midFlags>=2)?'中':(midFlags>=1||flags.length)?'低':'无';
+      var riskBg    = {无:'#d4edda',低:'#fff3cd',中:'#fff3cd',高:'#f8d7da'}[riskLevel];
+      var riskBdr   = {无:'#28a745',低:'#ffc107',中:'#fd7e14',高:'#dc3545'}[riskLevel];
+      var riskIcon  = {无:'✅',低:'🟡',中:'🟠',高:'🔴'}[riskLevel];
+
+      var html = '<div style="padding:14px;border-radius:8px;background:'+riskBg+';border-left:4px solid '+riskBdr+';margin-bottom:12px">'
+        + '<strong>'+riskIcon+' 串标/陪标风险：'+riskLevel+'</strong>'
+        + (flags.length ? '（发现 '+flags.length+' 项风险信号）' : '（未发现明显串标信号）')
+        + '</div>';
+
+      if (flags.length) {
+        html += '<h4 style="margin:0 0 8px">⚠️ 风险信号详情</h4>';
+        flags.forEach(function(f) {
+          var fbg = f.level==='高'?'#f8d7da':'#fff3cd', fbdr = f.level==='高'?'#dc3545':'#ffc107', ficon = f.level==='高'?'🔴':'🟠';
+          html += '<div style="padding:10px 12px;margin:6px 0;background:'+fbg+';border-left:4px solid '+fbdr+';border-radius:6px;font-size:0.9rem">'
+            + ficon+' <strong>'+escapeHtml(f.type)+'</strong>（'+f.level+'风险）<br>'
+            + '涉及：'+f.involved.map(function(n){return '「'+escapeHtml(n)+'」';}).join('、')+'<br>'
+            + escapeHtml(f.desc)+'<br>'
+            + '<small style="color:#666">证据：'+escapeHtml(f.evidence)+'</small></div>';
+        });
+      } else {
+        html += '<p style="color:#155724;margin:8px 0">✅ 未发现联系方式重复、文本雷同、报价规律等串标信号</p>';
+      }
+
+      html += '<hr style="margin:16px 0"><h4 style="margin-bottom:10px">🏆 综合评分与排名</h4>';
+      var medals = ['🥇','🥈','🥉'];
+      scores.forEach(function(s, idx) {
+        var medal = medals[idx]||('#'+(idx+1));
+        var sbg = s.total>=80?'#d4edda':s.total>=60?'#fff3cd':'#f8d7da';
+        var sbdr = s.total>=80?'#28a745':s.total>=60?'#ffc107':'#dc3545';
+        var prStr = s.price?'¥'+s.price.toLocaleString():'未识别';
+        var stren = s.strengths.map(function(x){return '<span style="background:#d4edda;padding:1px 7px;border-radius:10px;font-size:0.78rem;margin:1px">'+x+'</span>';}).join(' ');
+        var weak  = s.weaknesses.map(function(x){return '<span style="background:#f8d7da;padding:1px 7px;border-radius:10px;font-size:0.78rem;margin:1px">'+x+'</span>';}).join(' ');
+        html += '<div style="padding:12px;margin:8px 0;background:'+sbg+';border-left:4px solid '+sbdr+';border-radius:8px">'
+          + '<strong>'+medal+' 第'+(idx+1)+'名：'+escapeHtml(s.name)+'</strong>'+(s.company?'（'+escapeHtml(s.company)+'）':'')+'<br>'
+          + '综合得分：<strong>'+s.total+'</strong>/100 &nbsp;|&nbsp; 报价：'+prStr+'<br>'
+          + '<div style="margin:4px 0">'+stren+' '+weak+'</div>'
+          + '<small style="color:#555">建议：'+s.rec+'</small></div>';
+      });
+
+      html += '<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">📊 各维度评分明细</summary>'
+        + '<div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:0.85rem">'
+        + '<thead><tr style="background:#f0f0f0">'+['标书','综合','价格(35%)','字段(25%)','资质(20%)','格式(10%)','建议'].map(function(h){return '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd">'+h+'</th>';}).join('')+'</tr></thead><tbody>';
+      scores.forEach(function(s,idx){
+        html += '<tr style="border-bottom:1px solid #eee">'
+          + '<td style="padding:6px 8px">'+(medals[idx]||'')+' '+escapeHtml(s.name)+'</td>'
+          + '<td style="padding:6px 8px;font-weight:600">'+s.total+'</td>'
+          + '<td style="padding:6px 8px">'+s.priceScore+'</td>'
+          + '<td style="padding:6px 8px">'+s.fieldScore+'</td>'
+          + '<td style="padding:6px 8px">'+s.qualScore+'</td>'
+          + '<td style="padding:6px 8px">'+s.fmtScore+'</td>'
+          + '<td style="padding:6px 8px">'+s.rec+'</td></tr>';
+      });
+      html += '</tbody></table></div></details>';
+
+      if (scores.length) {
+        var w = scores[0];
+        html += '<div style="margin-top:14px;padding:12px;background:#cce5ff;border-left:4px solid #004085;border-radius:8px">'
+          + '<strong>🎯 综合推荐：'+escapeHtml(w.name)+'（'+w.total+'分）</strong><br>'
+          + (riskLevel!=='无'?'<span style="color:#c0392b">⚠️ 检测到串标/陪标风险信号，建议在评审前彻底核查。</span><br>':'')
+          + '公司：'+escapeHtml(w.company||'未识别')+' &nbsp;|&nbsp; 报价：'+(w.price?'¥'+w.price.toLocaleString():'未识别')
+          + '</div>';
+      }
+
+      byId('collusionResults').innerHTML = html;
+    }
+
+    async function extractTextForCollusion(file) {
+      var lower = file.name.toLowerCase();
+      var buf = await readFileAsArrayBuffer(file);
+      if (/\.pdf$/.test(lower)) {
+        var pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        var parts = [];
+        for (var i = 1; i <= pdf.numPages; i++) {
+          var pg = await pdf.getPage(i);
+          var tc = await pg.getTextContent();
+          parts.push(tc.items.map(function(it){return it.str;}).join(' '));
+        }
+        return parts.join('\n').trim();
+      } else if (/\.docx$/.test(lower)) {
+        var r = await mammoth.extractRawText({ arrayBuffer: buf });
+        return getTextSafe(r.value || r.text || '').trim();
+      } else {
+        await ensureTesseractLoaded();
+        var res = await Tesseract.recognize(file, 'chi_sim+eng');
+        return getTextSafe(res && res.data ? res.data.text : '').trim();
+      }
+    }
+
+    async function runCollusionAnalysis() {
+      var files = COLLUSION_STATE.files;
+      if (files.length < 2) return;
+      COLLUSION_STATE.running = true;
+      byId('collusionRunBtn').disabled = true;
+      byId('collusionProgress').classList.remove('hidden');
+      byId('collusionResults').innerHTML = '';
+
+      try {
+        var bids = [];
+        for (var i = 0; i < files.length; i++) {
+          var pct = Math.round(i / files.length * 70);
+          byId('collusionProgressText').textContent = '提取文字 '+(i+1)+'/'+files.length+'：'+files[i].name;
+          byId('collusionProgressBar').style.width = pct+'%';
+          var text = await extractTextForCollusion(files[i]);
+          bids.push({ name: files[i].name.replace(/\.[^.]+$/, ''), text: text,
+            price: extractPriceFromText(text), company: extractCompanyFromText(text),
+            phone: extractPhoneFromText(text), contact: extractContactFromText(text),
+            legalRep: extractLegalRepFromText(text) });
+        }
+        byId('collusionProgressText').textContent = '正在分析串标特征…';
+        byId('collusionProgressBar').style.width = '80%';
+        var flags = detectCollusion(bids);
+
+        byId('collusionProgressText').textContent = '正在计算综合评分…';
+        byId('collusionProgressBar').style.width = '90%';
+        var allPrices = bids.filter(function(b){return b.price;}).map(function(b){return b.price;});
+        var scores = bids.map(function(b){
+          var s = scoreOneBid(b, allPrices);
+          s.name = b.name; s.company = b.company; s.price = b.price;
+          return s;
+        });
+        scores.sort(function(a,b){return b.total-a.total;});
+
+        byId('collusionProgressBar').style.width = '100%';
+        byId('collusionProgressText').textContent = '✅ 分析完成';
+        renderCollusionResults(bids, flags, scores);
+      } catch(err) {
+        byId('collusionResults').innerHTML = '<div style="color:#dc3545;padding:10px">分析出错：'+escapeHtml((err&&err.message)||'未知错误')+'</div>';
+      }
+      COLLUSION_STATE.running = false;
+      byId('collusionRunBtn').disabled = COLLUSION_STATE.files.length < 2;
+    }
+
+    function updateCollusionFileList() {
+      var files = COLLUSION_STATE.files;
+      var html = files.length ? '<div style="font-size:0.88rem;color:#555;margin-bottom:6px">已选 '+files.length+' 份（最多10份）：</div><div style="display:flex;flex-wrap:wrap;gap:6px">' : '';
+      files.forEach(function(f, i) {
+        html += '<span style="background:#e8f5e9;border:1px solid #a5d6a7;padding:3px 10px;border-radius:12px;font-size:0.85rem">'
+          + '📄 '+escapeHtml(f.name.replace(/\.[^.]+$/,''))
+          + ' <span style="cursor:pointer;color:#c0392b;margin-left:4px" onclick="removeCollusionFile('+i+')">×</span></span>';
+      });
+      if (files.length) html += '</div>';
+      byId('collusionFileList').innerHTML = html;
+      byId('collusionRunBtn').disabled = files.length < 2;
+    }
+
+    function removeCollusionFile(idx) {
+      COLLUSION_STATE.files.splice(idx, 1);
+      updateCollusionFileList();
+    }
+
+    function bindCollusionZone() {
+      var zone = byId('collusionUploadZone');
+      var input = byId('collusionFileInput');
+      function addFiles(newFiles) {
+        Array.from(newFiles).forEach(function(f){
+          if (COLLUSION_STATE.files.length < 10) COLLUSION_STATE.files.push(f);
+        });
+        updateCollusionFileList();
+      }
+      zone.addEventListener('click', function(e){ if (e.target.tagName !== 'SPAN') input.click(); });
+      input.addEventListener('change', function(e){ if (e.target.files) addFiles(e.target.files); input.value=''; });
+      ['dragenter','dragover'].forEach(function(ev){ zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.add('dragover'); }); });
+      ['dragleave','dragend'].forEach(function(ev){ zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.remove('dragover'); }); });
+      zone.addEventListener('drop', function(e){ e.preventDefault(); zone.classList.remove('dragover'); if (e.dataTransfer&&e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+      byId('collusionRunBtn').addEventListener('click', function(){ if (!COLLUSION_STATE.running) runCollusionAnalysis(); });
+      byId('collusionClearBtn').addEventListener('click', function(){
+        COLLUSION_STATE.files = []; COLLUSION_STATE.running = false;
+        updateCollusionFileList();
+        byId('collusionProgress').classList.add('hidden');
+        byId('collusionProgressBar').style.width = '0%';
+        byId('collusionResults').innerHTML = '';
+      });
+    }
+
     function bindEvents() {
       bindUploadZone();
       bindManualPriceInputs();
+      bindCollusionZone();
       byId('clearBtn').addEventListener('click', clearAll);
       clearAll();
     }
