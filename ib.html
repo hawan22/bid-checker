@@ -343,14 +343,42 @@ function addArticle(artno) {
 // ═══════════════════════════════════════════════════════
 // Search
 // ═══════════════════════════════════════════════════════
+function parseInput(raw) {
+  // Supports formats:
+  //   "80415595"             → {art, qty:null}
+  //   "80415595  5"          → {art, qty:5}    (space/tab separated, qty is small number)
+  //   "80415595,5"           → {art, qty:5}
+  //   "80415595\t5"          → {art, qty:5}
+  const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l);
+  const seen = new Set();
+  const items = [];
+  for (const line of lines) {
+    // Split by tab, comma, or 2+ spaces
+    const parts = line.split(/\t|,|，|;|；|\s{2,}/).map(p => p.trim()).filter(p => p);
+    if (!parts.length) continue;
+    // First token must be a 7-10 digit number (article number)
+    const artRaw = parts[0].replace(/\D/g, '');
+    if (artRaw.length < 7 || artRaw.length > 10) continue;
+    const art = artRaw.padStart(8, '0');
+    if (!/^\d{8}$/.test(art) || seen.has(art)) continue;
+    seen.add(art);
+    // Second token (if present) = quantity — only if it's a plausible small number
+    let qty = null;
+    if (parts.length > 1) {
+      const qv = parseFloat(parts[1].replace(/[^\d.]/g, ''));
+      if (!isNaN(qv) && qv > 0 && qv < 1000000) qty = qv;
+    }
+    items.push({ art, qty });
+  }
+  return items;
+}
+
 function doSearch() {
   const raw = document.getElementById('article-input').value.trim();
   if (!raw) { alert('请输入货号'); return; }
 
-  const arts = [...new Set(
-    raw.split(/[\n,;，；\s]+/).map(s => s.trim().padStart(8, '0')).filter(s => /^\d{8}$/.test(s))
-  )];
-  if (!arts.length) { alert('未识别到有效货号（8位数字）'); return; }
+  const items = parseInput(raw);
+  if (!items.length) { alert('未识别到有效货号（7-10位数字）'); return; }
 
   stopScanner();
 
@@ -363,7 +391,7 @@ function doSearch() {
   tbody.innerHTML = '';
   RESULTS = [];
 
-  arts.forEach(art => {
+  items.forEach(({ art, qty: presetQty }) => {
     const prod = (DATA.products || {})[art] || (DATA.products || {})[art.replace(/^0+/, '')] || null;
     const fc = currentMonthFC(art);
     RESULTS.push({ art, prod, fc });
@@ -410,6 +438,15 @@ function doSearch() {
         </td>`;
     }
     tbody.appendChild(tr);
+
+    // Pre-fill qty if provided in input
+    if (presetQty != null) {
+      const inp = tr.querySelector('.qty-input');
+      if (inp) {
+        inp.value = presetQty;
+        onQtyChange(inp);
+      }
+    }
   });
 
   document.getElementById('result-card').style.display = 'block';
