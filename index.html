@@ -1077,12 +1077,12 @@
       html += '<div class="banner banner-info">已完成自动提取：' + escapeHtml(APP_STATE.fileName || '-') + ' ｜ ' + escapeHtml((APP_STATE.currentFileType || '').toUpperCase()) + ' ｜ ' + escapeHtml(pageLabel) + '</div>';
       html += '<div class="stats-grid">';
       html += '<div class="stat-box"><div class="stat-label">文件名</div><div class="stat-value" style="font-size:15px;">' + escapeHtml(APP_STATE.fileName || '-') + '</div></div>';
-      html += '<div class="stat-box"><div class="stat-label">页数</div><div class="stat-value">' + escapeHtml(pageLabel) + '</div></div>';
+      html += '<div class="stat-box"><div class="stat-label">' + (APP_STATE.currentFileType === 'pdf' ? '页数' : '段落数') + '</div><div class="stat-value">' + escapeHtml(pageLabel) + '</div></div>';
       html += '<div class="stat-box"><div class="stat-label">字符数</div><div class="stat-value">' + charTotal + '</div></div>';
       html += '<div class="stat-box"><div class="stat-label">文件大小</div><div class="stat-value" style="font-size:15px;">' + formatFileSize(APP_STATE.fileSize) + '</div></div>';
       html += '</div>';
       if (APP_STATE.currentFileType === 'docx') {
-        html += '<p class="muted small">DOCX 无法直接读取真实分页，按约 500 个中文字符 / 页估算。</p>';
+        html += '<p class="muted small">Word 文件在浏览器内无法获取真实页数，上方显示段落数供参考。</p>';
       }
       if (APP_STATE.currentFileType === 'image' && APP_STATE.imagePreviewUrl) {
         html += '<img class="img-preview" src="' + escapeHtml(APP_STATE.imagePreviewUrl) + '" alt="上传图片预览">';
@@ -1630,12 +1630,14 @@
 
     async function processDocx(buffer) {
       APP_STATE.currentFileType = 'docx';
-      setProgress(12, '正在提取 DOCX 文字…', '将按字符数估算页数', true);
+      setProgress(12, '正在提取 DOCX 文字…', '', true);
       var result = await mammoth.extractRawText({ arrayBuffer: buffer });
       APP_STATE.extractedText = getTextSafe(result.value || result.text || '').trim();
       var charCount = countChars(APP_STATE.extractedText);
-      APP_STATE.totalPages = Math.max(1, Math.round(charCount / 500));
-      APP_STATE.totalPagesLabel = '约' + APP_STATE.totalPages + '页（估算）';
+      // 统计非空段落数作为参考（比估算页数更准确）
+      var paraCount = APP_STATE.extractedText.split('\n').filter(function(l){ return l.trim().length > 0; }).length;
+      APP_STATE.totalPages = paraCount;
+      APP_STATE.totalPagesLabel = paraCount + ' 段（Word页数需在软件中查看）';
       APP_STATE.pages = [{ page: 1, text: APP_STATE.extractedText, charCount: charCount }];
     }
 
