@@ -54,13 +54,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f4f4;color:#111;m
 
 /* Table */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px;border:1px solid #C5D3E8}
 thead th{background:#0058A3;color:#fff;padding:9px 10px;text-align:left;white-space:nowrap;font-weight:600;position:sticky;top:0}
 thead th:first-child{border-radius:6px 0 0 0}
 thead th:last-child{border-radius:0 6px 0 0}
-tbody tr:nth-child(odd){background:#F9FAFB}
+tbody tr:nth-child(odd){background:#F4F7FB}
+tbody tr:nth-child(even){background:#fff}
 tbody tr:hover{background:#EDF3FB}
-tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
+tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;border-top:1px solid #d0d8e8}
 .artno{font-family:monospace;font-size:12px;font-weight:700;color:#0058A3}
 .hfb-badge{background:#0058A3;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
 .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;margin:1px}
@@ -696,21 +697,32 @@ async function submitRequest() {
   const confirmEl = document.getElementById('submit-confirm');
 
   if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-    // ── Fallback: mailto (until EmailJS is configured) ──
-    const plainLines = [
-      `【IB 采购需求 - FIS团队】${dateStr}`,
-      `客户公司：${company}`,
-      `需求时间：${reqdateCN}`, '',
-      'HFB  货号  中文名称  AVA  需求数量  在途  LT  AWS  EWS  当月FC  Remark',
-      ...items.map(it =>
-        `${it.hfb}  ${it.art}  ${it.name}  AVA:${it.ava}  需求:${it.qty}  在途:${it.inway}  LT:${it.lt}  AWS:${it.aws}  EWS:${it.ews}  FC:${it.fc||'—'}  ${it.remark}${it.overFC?' ⚠️超FC+'+it.overFCPct+'%':''}`),
-      notes ? `\n备注：${notes}` : '',
-    ].filter(l => l != null).join('\n');
-    window.location.href = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainLines)}`;
-    confirmEl.innerHTML = `<div class="alert alert-warn">
-      ⚠️ EmailJS 尚未配置，已打开邮件草稿。
-      <br><small>如需直接发送，请在代码中填入 EmailJS 的 PUBLIC_KEY / SERVICE_ID / TEMPLATE_ID。</small>
-    </div>`;
+    // ── Fallback: copy HTML to clipboard + open blank mailto ──
+    let clipOk = false;
+    try {
+      const blob = new Blob([htmlBody], { type: 'text/html' });
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+      clipOk = true;
+    } catch (e) {
+      // clipboard API not available or denied
+    }
+    const mailtoUrl = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}`;
+    window.location.href = mailtoUrl;
+    if (clipOk) {
+      confirmEl.innerHTML = `<div class="alert alert-ok">
+        ✅ <strong>HTML 表格已复制到剪贴板</strong><br>
+        Outlook 草稿已打开，在正文区按 <strong>Ctrl+V</strong> 粘贴，即可看到格式化表格，然后发送。
+      </div>`;
+    } else {
+      confirmEl.innerHTML = `<div class="alert alert-warn">
+        ⚠️ 浏览器不支持自动复制，邮件草稿已打开（纯文本）。<br>
+        如需表格格式，请点击下方「复制 HTML」按钮后粘贴到 Outlook 正文。
+        <div style="margin-top:8px">
+          <button class="btn btn-blue btn-sm" onclick="manualCopyHtml()">📋 复制 HTML 表格</button>
+        </div>
+      </div>`;
+      window._lastHtmlBody = htmlBody;
+    }
     return;
   }
 
@@ -729,6 +741,19 @@ async function submitRequest() {
   } catch (err) {
     const msg = (err && (err.text || err.message)) || JSON.stringify(err);
     confirmEl.innerHTML = `<div class="alert alert-danger">❌ 发送失败：${msg}<br>请截图联系 IB 团队，或将需求发至 <strong>hattie.wang@ingka.ikea.com</strong></div>`;
+  }
+}
+
+// ── Manual HTML copy fallback ──
+async function manualCopyHtml() {
+  const h = window._lastHtmlBody || ';
+  if (!h) return;
+  try {
+    const blob = new Blob([h], { type: 'text/html' });
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+    alert('✅ 已复制！请在 Outlook 正文粘贴 Ctrl+V');
+  } catch (e) {
+    alert('复制失败，请手动复制：' + e.message);
   }
 }
 
@@ -769,6 +794,9 @@ initQR();
 </script>
 </body>
 </html>
+
+
+
 
 
 
