@@ -778,7 +778,7 @@ async function submitRequest() {
 
 // ── Manual HTML copy fallback ──
 async function manualCopyHtml() {
-  const h = window._lastHtmlBody || ';
+  const h = window._lastHtmlBody || '';
   if (!h) return;
   try {
     const blob = new Blob([h], { type: 'text/html' });
@@ -826,6 +826,7 @@ initQR();
 </script>
 </body>
 </html>
+
 
 
 
