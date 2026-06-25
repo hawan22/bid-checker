@@ -130,6 +130,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
 <div class="status-bar">
   <div class="status-dot loading" id="sdot"></div>
   <span id="stext">数据加载中…</span>
+  <button onclick="loadData(true)" style="margin-left:auto;background:none;border:1px solid #9ab;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;white-space:nowrap">🔄 刷新数据</button>
 </div>
 
 <div class="page">
@@ -241,16 +242,47 @@ let scanner = null;
 // ═══════════════════════════════════════════════════════
 // Load data
 // ═══════════════════════════════════════════════════════
-async function loadData() {
+const CACHE_KEY = 'ib_data_cache';
+const CACHE_TS_KEY = 'ib_data_ts';
+const CACHE_TTL_MS = 55 * 60 * 1000; // 55 minutes
+
+async function loadData(forceRefresh) {
   setStatus('loading', '数据加载中…');
   try {
+    // Try localStorage cache first
+    if (!forceRefresh) {
+      const ts = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0');
+      if (Date.now() - ts < CACHE_TTL_MS) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          DATA = JSON.parse(cached);
+          const n = Object.keys(DATA.products || {}).length;
+          setStatus('ok', `数据已就绪 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'} （缓存）`);
+          return;
+        }
+      }
+    }
+    // Fetch fresh data
     const r = await fetch('ib-data.json?t=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
     DATA = await r.json();
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(DATA));
+      localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+    } catch(e) { /* storage full, ignore */ }
     const n = Object.keys(DATA.products || {}).length;
-    const upd = DATA.updated || '未知';
-    setStatus('ok', `数据已就绪 · ${n} 个产品 · 更新于 ${upd}`);
+    setStatus('ok', `数据已就绪 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`);
   } catch (e) {
+    // Try stale cache as fallback
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        DATA = JSON.parse(cached);
+        const n = Object.keys(DATA.products || {}).length;
+        setStatus('ok', `⚠️ 网络失败，使用缓存 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`);
+        return;
+      }
+    } catch(e2) {}
     setStatus('err', '数据加载失败：' + e.message + '（请联系 IB 团队更新数据）');
     DATA = { products: {}, fc_weekly: {}, updated: '' };
   }
@@ -794,6 +826,8 @@ initQR();
 </script>
 </body>
 </html>
+
+
 
 
 
