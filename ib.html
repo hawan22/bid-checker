@@ -6,6 +6,7 @@
 <title>IB list | IKEA Business</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f4f4;color:#111;min-height:100vh}
@@ -221,6 +222,19 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f0f0f0}
 // ═══════════════════════════════════════════════════════
 let DATA = null;  // { products:{}, fc_weekly:{}, updated:"" }
 let RESULTS = []; // [{art, product, fcResult}]
+
+// ── findProduct: tries all common paddings ──
+function findProduct(artRaw) {
+  const prods = DATA.products || {};
+  if (prods[artRaw]) return prods[artRaw];
+  for (let len = 4; len <= 10; len++) {
+    const k = artRaw.padStart(len, '0');
+    if (prods[k]) return prods[k];
+  }
+  const bare = artRaw.replace(/^0+/, '');
+  if (bare && prods[bare]) return prods[bare];
+  return null;
+}
 let scanner = null;
 
 // ═══════════════════════════════════════════════════════
@@ -351,7 +365,7 @@ function parseInput(raw) {
     if (!nums.length) continue;
     // First number sequence with 6-10 digits = article number
     const artRaw = nums[0];
-    if (artRaw.length < 6 || artRaw.length > 10) continue;
+    if (artRaw.length < 4 || artRaw.length > 10) continue;
     const art = artRaw.padStart(8, '0');
     if (art.length !== 8 || seen.has(art)) continue;
     seen.add(art);
@@ -371,7 +385,7 @@ function doSearch() {
   if (!raw) { alert('请输入货号'); return; }
 
   const items = parseInput(raw);
-  if (!items.length) { alert('未识别到有效货号（7-10位数字）'); return; }
+  if (!items.length) { alert('未识别到有效货号（4-10位数字）'); return; }
 
   stopScanner();
 
@@ -385,7 +399,7 @@ function doSearch() {
   RESULTS = [];
 
   items.forEach(({ art, qty: presetQty }) => {
-    const prod = (DATA.products || {})[art] || (DATA.products || {})[art.replace(/^0+/, '')] || null;
+    const prod = findProduct(art);
     const fc = currentMonthFC(art);
     RESULTS.push({ art, prod, fc });
 
@@ -584,18 +598,85 @@ function getSubmitItems() {
     const art = inp.dataset.art;
     const fc = parseFloat(inp.dataset.fc);
     const res = RESULTS.find(r => r.art === art);
-    const name = res && res.prod ? res.prod.name || '' : '';
+    const prod = res ? res.prod : null;
+    const name = prod ? prod.name || '' : '';
+    const hfb  = prod ? (prod.hfb || art.slice(0,2)) : '';
+    const ava  = prod && prod.ava != null ? Math.round(prod.ava) : '—';
+    const inway  = prod && prod.in_transit != null ? prod.in_transit.toLocaleString() : '—';
+    const nxdate = prod ? (prod.next_delivery_date || '—') : '—';
+    const lt   = prod && prod.lt != null ? prod.lt : '—';
+    const aws  = prod && prod.aws != null ? (Math.round(prod.aws*10)/10) : '—';
+    const ews  = prod && prod.ews != null ? (Math.round(prod.ews*10)/10) : '—';
     const overFC = !isNaN(fc) && fc > 0 && qty / fc > 1.1;
     const overFCPct = overFC ? Math.round((qty / fc - 1) * 100) : 0;
-    items.push({ art, name, qty, overFC, overFCPct, fc });
+    const rmkCell = document.getElementById('rmk-' + art);
+    const remark = rmkCell ? rmkCell.textContent.trim() : '';
+    const fccCell = document.getElementById('fcc-' + art);
+    const fcCompare = fccCell ? fccCell.textContent.trim() : '';
+    items.push({ art, name, hfb, qty, overFC, overFCPct, fc, ava, inway, nxdate, lt, aws, ews, remark, fcCompare });
   });
   return items;
 }
 
 // ═══════════════════════════════════════════════════════
-// Submit
+// Submit — EmailJS direct send
+// Fill in your EmailJS credentials below (one-time setup at emailjs.com)
 // ═══════════════════════════════════════════════════════
-function submitRequest() {
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // Account > Public Key
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // Email Services > Service ID
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // Email Templates > Template ID
+
+function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
+  const tdStyle = 'padding:6px 10px;border:1px solid #ddd;font-size:12px';
+  const thStyle = 'padding:7px 10px;background:#0058A3;color:#fff;font-size:12px;text-align:left;border:1px solid #0047A0';
+  const rows = items.map(it => {
+    const fcWarn = it.overFC ? ` <span style="color:#E00751;font-weight:700">⚠️超FC+${it.overFCPct}%</span>` : '';
+    return `<tr>
+      <td style="${tdStyle}">${it.hfb}</td>
+      <td style="${tdStyle};font-family:monospace;font-weight:700;color:#0058A3">${it.art}</td>
+      <td style="${tdStyle}">${it.name}</td>
+      <td style="${tdStyle};text-align:right">${it.ava}</td>
+      <td style="${tdStyle};text-align:right;font-weight:700">${it.qty.toLocaleString()}</td>
+      <td style="${tdStyle};text-align:right">${it.inway}</td>
+      <td style="${tdStyle};text-align:center">${it.nxdate}</td>
+      <td style="${tdStyle};text-align:right">${it.lt}</td>
+      <td style="${tdStyle};text-align:right">${it.aws}</td>
+      <td style="${tdStyle};text-align:right">${it.ews}</td>
+      <td style="${tdStyle}">${it.fcCompare}${fcWarn}</td>
+      <td style="${tdStyle};text-align:right">${it.fc > 0 ? it.fc.toLocaleString() : '—'}</td>
+      <td style="${tdStyle}">${it.remark}</td>
+    </tr>`;
+  }).join('');
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111">
+  <h2 style="color:#0058A3;font-size:15px;margin:0 0 12px">📦 IB 采购需求 — FIS 团队</h2>
+  <table style="border-collapse:collapse;margin-bottom:14px">
+    <tr><td style="padding:3px 14px 3px 0;font-weight:700;color:#444">客户公司</td><td style="font-weight:700">${company}</td></tr>
+    <tr><td style="padding:3px 14px 3px 0;font-weight:700;color:#444">需求时间</td><td>${reqdateCN}</td></tr>
+    <tr><td style="padding:3px 14px 3px 0;font-weight:700;color:#444">提交时间</td><td style="color:#888">${dateStr}</td></tr>
+  </table>
+  <table style="border-collapse:collapse;min-width:700px">
+    <thead><tr>
+      <th style="${thStyle}">HFB</th>
+      <th style="${thStyle}">货号</th>
+      <th style="${thStyle}">中文名称</th>
+      <th style="${thStyle}">AVA</th>
+      <th style="${thStyle}">需求数量</th>
+      <th style="${thStyle}">在途</th>
+      <th style="${thStyle}">下次到货</th>
+      <th style="${thStyle}">LT(周)</th>
+      <th style="${thStyle}">AWS</th>
+      <th style="${thStyle}">EWS</th>
+      <th style="${thStyle}">FC对比</th>
+      <th style="${thStyle}">当月FC</th>
+      <th style="${thStyle}">Remark</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  ${notes ? `<p style="margin-top:12px"><b>备注：</b>${notes}</p>` : ''}
+</div>`;
+}
+
+async function submitRequest() {
   const company = document.getElementById('f-company').value.trim();
   const reqdate = document.getElementById('f-reqdate').value.trim();
   if (!company) { alert('请填写客户公司名称'); return; }
@@ -607,35 +688,48 @@ function submitRequest() {
   const now = new Date();
   const dateStr = now.toLocaleString('zh-CN', { hour12: false });
   const notes = document.getElementById('f-notes').value.trim();
-
   const rd = new Date(reqdate + 'T00:00:00');
   const reqdateCN = `${rd.getFullYear()}年${rd.getMonth()+1}月${rd.getDate()}日`;
-
-  const lines = [
-    `【IB 采购需求 - FIS团队】${dateStr}`,
-    `客户公司：${company}`,
-    `需求时间：${reqdateCN}`,
-    '',
-    '需求明细：',
-    ...items.map(it => {
-      const fcInfo = it.fc > 0 ? `当月FC: ${it.fc.toLocaleString()}` : '无FC数据';
-      const warn = it.overFC ? ` ⚠️ 超FC+${it.overFCPct}%，需咨询SO` : '';
-      return `  ${it.art}  ${it.name}  需求: ${it.qty.toLocaleString()} 件  （${fcInfo}${warn}）`;
-    }),
-    notes ? `\n备注：${notes}` : '',
-  ].filter(l => l !== undefined && l !== null);
-
-  const body = lines.join('\n').replace(/\n\n+/g, '\n\n');
   const subject = `IB采购需求 - ${company} - 需求时间${reqdateCN}`;
+  const htmlBody = buildEmailHtml(company, reqdateCN, items, notes, dateStr);
 
-  const mailto = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailto;
+  const confirmEl = document.getElementById('submit-confirm');
 
-  document.getElementById('submit-confirm').innerHTML = `
-    <div class="alert alert-ok">
-      ✅ 邮件已准备好，请在邮件客户端中确认发送。<br>
-      如未自动打开，请将需求明细发送至：<strong>hattie.wang@ingka.ikea.com</strong>
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    // ── Fallback: mailto (until EmailJS is configured) ──
+    const plainLines = [
+      `【IB 采购需求 - FIS团队】${dateStr}`,
+      `客户公司：${company}`,
+      `需求时间：${reqdateCN}`, '',
+      'HFB  货号  中文名称  AVA  需求数量  在途  LT  AWS  EWS  当月FC  Remark',
+      ...items.map(it =>
+        `${it.hfb}  ${it.art}  ${it.name}  AVA:${it.ava}  需求:${it.qty}  在途:${it.inway}  LT:${it.lt}  AWS:${it.aws}  EWS:${it.ews}  FC:${it.fc||'—'}  ${it.remark}${it.overFC?' ⚠️超FC+'+it.overFCPct+'%':''}`),
+      notes ? `\n备注：${notes}` : '',
+    ].filter(l => l != null).join('\n');
+    window.location.href = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainLines)}`;
+    confirmEl.innerHTML = `<div class="alert alert-warn">
+      ⚠️ EmailJS 尚未配置，已打开邮件草稿。
+      <br><small>如需直接发送，请在代码中填入 EmailJS 的 PUBLIC_KEY / SERVICE_ID / TEMPLATE_ID。</small>
     </div>`;
+    return;
+  }
+
+  // ── EmailJS direct send ──
+  confirmEl.innerHTML = `<div class="alert alert-info">📤 发送中，请稍候…</div>`;
+  try {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: 'hattie.wang@ingka.ikea.com',
+      subject,
+      html_body: htmlBody,
+      company,
+      reqdate: reqdateCN,
+    });
+    confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
+  } catch (err) {
+    const msg = (err && (err.text || err.message)) || JSON.stringify(err);
+    confirmEl.innerHTML = `<div class="alert alert-danger">❌ 发送失败：${msg}<br>请截图联系 IB 团队，或将需求发至 <strong>hattie.wang@ingka.ikea.com</strong></div>`;
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -675,4 +769,9 @@ initQR();
 </script>
 </body>
 </html>
+
+
+
+
+
 
