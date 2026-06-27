@@ -580,16 +580,11 @@ function onQtyChange(input) {
     const ratio = qty / fc;
     const pct = Math.round((ratio - 1) * 100);
     if (ratio > 1.1) {
-      cell.innerHTML = `
-        <div class="fc-warn-label">⚠️ 超FC +${pct}%</div>
-        <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
+      cell.innerHTML = `<div class="fc-warn-label">⚠️ 超FC +${pct}%</div>`;
     } else if (ratio >= 0.9) {
-      cell.innerHTML = `
-        <div class="fc-ok-label">✅ 正常</div>
-        <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
+      cell.innerHTML = `<div class="fc-ok-label">✅ 正常</div>`;
     } else {
-      cell.innerHTML = `
-        <div style="color:#0058A3;font-weight:700">${Math.round(ratio*100)}%</div>`;
+      cell.innerHTML = `<div style="color:#0058A3;font-weight:700">${Math.round(ratio*100)}%</div>`;
     }
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
   }
