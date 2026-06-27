@@ -2,6 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>IB list | IKEA Business</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -722,28 +725,38 @@ async function submitRequest() {
 
   const confirmEl = document.getElementById('submit-confirm');
 
-  confirmEl.innerHTML = `<div class="alert alert-info">📤 发送中，请稍候…</div>`;
+  confirmEl.innerHTML = `<div class="alert alert-info">📤 尝试本地发送…</div>`;
 
   // ── 优先尝试本地 API（IB Email Server on localhost:5003）──
+  let localSendOk = false;
+  let localError = '';
   try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
     const resp = await fetch('http://localhost:5003/send_ib_email', {
       method: 'POST',
+      mode: 'cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subject, html_body: htmlBody }),
-      signal: AbortSignal.timeout(8000),
+      signal: ctrl.signal,
     });
+    clearTimeout(tid);
     const result = await resp.json();
     if (resp.ok && result.status === 'ok') {
-      confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
-      return;
+      localSendOk = true;
+    } else {
+      localError = result.message || '本地服务返回错误';
     }
-    throw new Error(result.message || '本地服务返回错误');
   } catch (e) {
-    // 本地服务不可用时降级
+    localError = e.message || String(e);
+  }
+
+  if (localSendOk) {
+    confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
+    return;
   }
 
   if (EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
-    // ── EmailJS direct send ──
     try {
       emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
@@ -763,6 +776,8 @@ async function submitRequest() {
   }
 
   // ── 最终降级：复制剪贴板 + 打开 Outlook 草稿 ──
+  // 显示本地API失败原因，方便排查
+  const dbgInfo = localError ? `<div style="font-size:11px;color:#999;margin-top:4px">本地API: ${localError}</div>` : '';
   let clipOk = false;
   try {
     const blob = new Blob([htmlBody], { type: 'text/html' });
@@ -774,7 +789,7 @@ async function submitRequest() {
   if (clipOk) {
     confirmEl.innerHTML = `<div class="alert alert-warn">
       ⚠️ 本地发送服务未运行，Outlook 草稿已打开。<br>
-      HTML 表格已复制到剪贴板，在正文区按 <strong>Ctrl+V</strong> 粘贴后发送。
+      HTML 表格已复制到剪贴板，在正文区按 <strong>Ctrl+V</strong> 粘贴后发送。${dbgInfo}
     </div>`;
   } else {
     confirmEl.innerHTML = `<div class="alert alert-warn">
