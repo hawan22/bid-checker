@@ -171,7 +171,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
             <th class="num">LT<br><small style="font-weight:400;opacity:.8">周</small></th>
             <th class="num">AWS<br><small style="font-weight:400;opacity:.8">周均销</small></th>
             <th class="num">EWS<br><small style="font-weight:400;opacity:.8">预期周销</small></th>
-            <th>FC对比</th>
+            <th>CN Rate%</th>
             <th class="num">当月FC</th>
           </tr>
         </thead>
@@ -589,8 +589,7 @@ function onQtyChange(input) {
         <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
     } else {
       cell.innerHTML = `
-        <div style="color:#0058A3;font-weight:700">${qty} / ${fc} = ${Math.round(ratio*100)}%</div>
-        <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
+        <div style="color:#0058A3;font-weight:700">${Math.round(ratio*100)}%</div>`;
     }
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
   }
@@ -700,7 +699,7 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <th style="${thStyle}">LT(周)</th>
       <th style="${thStyle}">AWS</th>
       <th style="${thStyle}">EWS</th>
-      <th style="${thStyle}">FC对比</th>
+      <th style="${thStyle}">CN Rate%</th>
       <th style="${thStyle}">当月FC</th>
     </tr></thead>
     <tbody>${rows}</tbody>
