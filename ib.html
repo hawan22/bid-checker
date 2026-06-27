@@ -163,6 +163,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
             <th>HFB</th>
             <th>货号</th>
             <th>中文名称</th>
+            <th>Remark</th>
             <th class="num">AVA<br><small style="font-weight:400;opacity:.8">可用库存</small></th>
             <th>需求数量</th>
             <th class="num">在途总量</th>
@@ -170,7 +171,6 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
             <th class="num">LT<br><small style="font-weight:400;opacity:.8">周</small></th>
             <th class="num">AWS<br><small style="font-weight:400;opacity:.8">周均销</small></th>
             <th class="num">EWS<br><small style="font-weight:400;opacity:.8">预期周销</small></th>
-            <th>Remark</th>
             <th>FC对比</th>
             <th class="num">当月FC</th>
           </tr>
@@ -460,6 +460,9 @@ function doSearch() {
         <td><span class="hfb-badge">${hfb}</span></td>
         <td class="artno">${art}</td>
         <td>${name}</td>
+        <td class="fc-cell" id="rmk-${art}">
+          <span class="fc-pending">—</span>
+        </td>
         <td class="num">${ava}</td>
         <td class="qty-cell">
           <input type="number" class="qty-input" min="0" placeholder="数量"
@@ -471,9 +474,6 @@ function doSearch() {
         <td class="num">${lt}</td>
         <td class="num">${aws}</td>
         <td class="num">${ews}</td>
-        <td class="fc-cell" id="rmk-${art}">
-          <span class="fc-pending">—</span>
-        </td>
         <td class="fc-cell" id="fcc-${art}">
           <span class="fc-pending">填写数量后显示</span>
         </td>
@@ -589,7 +589,7 @@ function onQtyChange(input) {
         <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
     } else {
       cell.innerHTML = `
-        <div style="color:#0058A3;font-weight:700">低于FC ${Math.round((1-ratio)*100)}%</div>
+        <div style="color:#0058A3;font-weight:700">${qty} / ${fc} = ${Math.round(ratio*100)}%</div>
         <div class="fc-sub">需求 ${qty.toLocaleString()} / FC ${fc.toLocaleString()}</div>`;
     }
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
@@ -668,6 +668,7 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <td style="${tdStyle}">${it.hfb}</td>
       <td style="${tdStyle};font-family:monospace;font-weight:700;color:#0058A3">${it.art}</td>
       <td style="${tdStyle}">${it.name}</td>
+      <td style="${tdStyle}">${it.remark}</td>
       <td style="${tdStyle};text-align:right">${it.ava}</td>
       <td style="${tdStyle};text-align:right;font-weight:700">${it.qty.toLocaleString()}</td>
       <td style="${tdStyle};text-align:right">${it.inway}</td>
@@ -677,7 +678,6 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <td style="${tdStyle};text-align:right">${it.ews}</td>
       <td style="${tdStyle}">${it.fcCompare}${fcWarn}</td>
       <td style="${tdStyle};text-align:right">${it.fc > 0 ? it.fc.toLocaleString() : '—'}</td>
-      <td style="${tdStyle}">${it.remark}</td>
     </tr>`;
   }).join('');
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111">
@@ -692,6 +692,7 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <th style="${thStyle}">HFB</th>
       <th style="${thStyle}">货号</th>
       <th style="${thStyle}">中文名称</th>
+      <th style="${thStyle}">Remark</th>
       <th style="${thStyle}">AVA</th>
       <th style="${thStyle}">需求数量</th>
       <th style="${thStyle}">在途</th>
@@ -701,7 +702,6 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <th style="${thStyle}">EWS</th>
       <th style="${thStyle}">FC对比</th>
       <th style="${thStyle}">当月FC</th>
-      <th style="${thStyle}">Remark</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
@@ -728,51 +728,69 @@ async function submitRequest() {
 
   const confirmEl = document.getElementById('submit-confirm');
 
-  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-    // ── Fallback: copy HTML to clipboard + open blank mailto ──
-    let clipOk = false;
-    try {
-      const blob = new Blob([htmlBody], { type: 'text/html' });
-      await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
-      clipOk = true;
-    } catch (e) {
-      // clipboard API not available or denied
+  confirmEl.innerHTML = `<div class="alert alert-info">📤 发送中，请稍候…</div>`;
+
+  // ── 优先尝试本地 API（IB Email Server on localhost:5003）──
+  try {
+    const resp = await fetch('http://localhost:5003/send_ib_email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, html_body: htmlBody }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const result = await resp.json();
+    if (resp.ok && result.status === 'ok') {
+      confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
+      return;
     }
-    const mailtoUrl = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}`;
-    window.location.href = mailtoUrl;
-    if (clipOk) {
-      confirmEl.innerHTML = `<div class="alert alert-ok">
-        ✅ <strong>HTML 表格已复制到剪贴板</strong><br>
-        Outlook 草稿已打开，在正文区按 <strong>Ctrl+V</strong> 粘贴，即可看到格式化表格，然后发送。
-      </div>`;
-    } else {
-      confirmEl.innerHTML = `<div class="alert alert-warn">
-        ⚠️ 浏览器不支持自动复制，邮件草稿已打开（纯文本）。<br>
-        如需表格格式，请点击下方「复制 HTML」按钮后粘贴到 Outlook 正文。
-        <div style="margin-top:8px">
-          <button class="btn btn-blue btn-sm" onclick="manualCopyHtml()">📋 复制 HTML 表格</button>
-        </div>
-      </div>`;
-      window._lastHtmlBody = htmlBody;
-    }
-    return;
+    throw new Error(result.message || '本地服务返回错误');
+  } catch (e) {
+    // 本地服务不可用时降级
   }
 
-  // ── EmailJS direct send ──
-  confirmEl.innerHTML = `<div class="alert alert-info">📤 发送中，请稍候…</div>`;
+  if (EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+    // ── EmailJS direct send ──
+    try {
+      emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: 'hattie.wang@ingka.ikea.com',
+        subject,
+        html_body: htmlBody,
+        company,
+        reqdate: reqdateCN,
+      });
+      confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
+      return;
+    } catch (err) {
+      const msg = (err && (err.text || err.message)) || JSON.stringify(err);
+      confirmEl.innerHTML = `<div class="alert alert-danger">❌ 发送失败：${msg}</div>`;
+      return;
+    }
+  }
+
+  // ── 最终降级：复制剪贴板 + 打开 Outlook 草稿 ──
+  let clipOk = false;
   try {
-    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: 'hattie.wang@ingka.ikea.com',
-      subject,
-      html_body: htmlBody,
-      company,
-      reqdate: reqdateCN,
-    });
-    confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
-  } catch (err) {
-    const msg = (err && (err.text || err.message)) || JSON.stringify(err);
-    confirmEl.innerHTML = `<div class="alert alert-danger">❌ 发送失败：${msg}<br>请截图联系 IB 团队，或将需求发至 <strong>hattie.wang@ingka.ikea.com</strong></div>`;
+    const blob = new Blob([htmlBody], { type: 'text/html' });
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+    clipOk = true;
+  } catch (e) { /* clipboard denied */ }
+  const mailtoUrl = `mailto:hattie.wang@ingka.ikea.com?subject=${encodeURIComponent(subject)}`;
+  window.location.href = mailtoUrl;
+  if (clipOk) {
+    confirmEl.innerHTML = `<div class="alert alert-warn">
+      ⚠️ 本地发送服务未运行，Outlook 草稿已打开。<br>
+      HTML 表格已复制到剪贴板，在正文区按 <strong>Ctrl+V</strong> 粘贴后发送。
+    </div>`;
+  } else {
+    confirmEl.innerHTML = `<div class="alert alert-warn">
+      ⚠️ 本地发送服务未运行，Outlook 草稿已打开（纯文本）。<br>
+      如需表格格式，请点击下方按钮复制后粘贴。
+      <div style="margin-top:8px">
+        <button class="btn btn-blue btn-sm" onclick="manualCopyHtml()">📋 复制 HTML 表格</button>
+      </div>
+    </div>`;
+    window._lastHtmlBody = htmlBody;
   }
 }
 
