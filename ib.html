@@ -192,9 +192,6 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
       </table>
     </div>
 
-    <!-- 汇总警告 -->
-    <div id="warn-box" style="margin-top:14px"></div>
-
     <hr class="divider">
 
     <!-- 提交需求 -->
@@ -522,7 +519,6 @@ function doSearch() {
   document.getElementById('remark-filter').value = 'all';
   applyRemarkFilter();
   document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
-  refreshWarnBox();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -633,44 +629,13 @@ function onQtyChange(input) {
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, null);
   } else {
     const ratio = qty / fc;
-    const pct = Math.round((ratio - 1) * 100);
-    if (ratio > 1.1) {
-      cell.innerHTML = `<div class="fc-warn-label">⚠️ 超FC +${pct}%</div>`;
-    } else if (ratio >= 0.9) {
-      cell.innerHTML = `<div class="fc-ok-label">✅ 正常</div>`;
-    } else {
-      cell.innerHTML = `<div style="color:#0058A3;font-weight:700">${Math.round(ratio*100)}%</div>`;
-    }
+    const pct = Math.round(ratio * 100);
+    const color = ratio > 0.1 ? '#E00751' : '#0058A3';
+    cell.innerHTML = `<div style="color:${color};font-weight:700">${pct}%</div>`;
     if (rmkCell && prod) rmkCell.innerHTML = calcRemark(prod, qty, fcResult);
   }
   applyRemarkFilter();
-  refreshWarnBox();
   updateAutoDeliveryDate();
-}
-
-function refreshWarnBox() {
-  const warns = [];
-  document.querySelectorAll('.qty-input').forEach(inp => {
-    const qty = parseFloat(inp.value);
-    const fc = parseFloat(inp.dataset.fc);
-    if (isNaN(qty) || qty <= 0 || isNaN(fc) || fc <= 0) return;
-    if (qty / fc > 1.1) {
-      const art = inp.dataset.art;
-      const res = RESULTS.find(r => r.art === art);
-      const name = res && res.prod ? res.prod.name || art : art;
-      const pct = Math.round((qty / fc - 1) * 100);
-      warns.push(`货号 <strong>${art}</strong> ${name}：需求 ${qty.toLocaleString()} 件，超月度FC <strong>+${pct}%</strong>`);
-    }
-  });
-  const box = document.getElementById('warn-box');
-  if (warns.length) {
-    box.innerHTML = `<div class="alert alert-warn">
-      <div style="font-weight:700;margin-bottom:6px">⚠️ 以下货号需求超月度FC 10%，请联系 SO 确认供货能力：</div>
-      <ul style="padding-left:18px">${warns.map(w => `<li style="margin:4px 0">${w}</li>`).join('')}</ul>
-    </div>`;
-  } else {
-    box.innerHTML = '';
-  }
 }
 
 function getSubmitItems() {
@@ -690,13 +655,11 @@ function getSubmitItems() {
     const lt   = prod && prod.lt != null ? prod.lt : '—';
     const aws  = prod && prod.aws != null ? (Math.round(prod.aws*10)/10) : '—';
     const ews  = prod && prod.ews != null ? (Math.round(prod.ews*10)/10) : '—';
-    const overFC = !isNaN(fc) && fc > 0 && qty / fc > 1.1;
-    const overFCPct = overFC ? Math.round((qty / fc - 1) * 100) : 0;
     const rmkCell = document.getElementById('rmk-' + art);
     const remark = rmkCell ? rmkCell.textContent.trim() : '';
     const fccCell = document.getElementById('fcc-' + art);
     const fcCompare = fccCell ? fccCell.textContent.trim() : '';
-    items.push({ art, name, hfb, qty, overFC, overFCPct, fc, ava, inway, nxdate, lt, aws, ews, remark, fcCompare });
+    items.push({ art, name, hfb, qty, fc, ava, inway, nxdate, lt, aws, ews, remark, fcCompare });
   });
   return items;
 }
@@ -713,7 +676,6 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
   const tdStyle = 'padding:6px 10px;border:1px solid #ddd;font-size:12px';
   const thStyle = 'padding:7px 10px;background:#0058A3;color:#fff;font-size:12px;text-align:left;border:1px solid #0047A0';
   const rows = items.map(it => {
-    const fcWarn = it.overFC ? ` <span style="color:#E00751;font-weight:700">⚠️超FC+${it.overFCPct}%</span>` : '';
     return `<tr>
       <td style="${tdStyle}">${it.hfb}</td>
       <td style="${tdStyle};font-family:monospace;font-weight:700;color:#0058A3">${it.art}</td>
@@ -726,7 +688,7 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
       <td style="${tdStyle};text-align:right">${it.lt}</td>
       <td style="${tdStyle};text-align:right">${it.aws}</td>
       <td style="${tdStyle};text-align:right">${it.ews}</td>
-      <td style="${tdStyle}">${it.fcCompare}${fcWarn}</td>
+      <td style="${tdStyle}">${it.fcCompare}</td>
       <td style="${tdStyle};text-align:right">${it.fc > 0 ? it.fc.toLocaleString() : '—'}</td>
     </tr>`;
   }).join('');
@@ -918,7 +880,6 @@ initQR();
 </script>
 </body>
 </html>
-
 
 
 
