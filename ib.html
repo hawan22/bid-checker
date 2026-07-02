@@ -154,6 +154,8 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
       <div class="btn-col">
         <button class="btn btn-blue" onclick="doSearch()">🔍 查询</button>
         <button class="btn btn-green" id="scan-btn" onclick="toggleScanner()">📷 扫码</button>
+        <button class="btn btn-blue btn-sm" onclick="document.getElementById('f-attachments-doc').click()">📎 添加附件</button>
+        <button class="btn btn-green btn-sm" onclick="document.getElementById('f-attachments-img').click()">🖼️ 添加截图</button>
         <button class="btn btn-yellow btn-sm" onclick="clearAll()">🗑 清除</button>
       </div>
     </div>
@@ -162,9 +164,10 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
       <button class="btn btn-red btn-sm" style="margin-top:10px" onclick="stopScanner()">■ 停止扫码</button>
     </div>
     <div class="fg full" style="margin-top:14px">
-      <label>添加附件 / 添加截图</label>
+      <label>已添加附件 / 截图</label>
       <div class="attach-box">
-        <input type="file" id="f-attachments" multiple accept="image/*,.pdf,.xlsx,.xls,.csv,.txt" onchange="renderAttachmentList()">
+        <input type="file" id="f-attachments-doc" multiple accept=".pdf,.xlsx,.xls,.csv,.txt,.doc,.docx,.ppt,.pptx,.zip" onchange="handleAttachmentPick(event)" style="display:none">
+        <input type="file" id="f-attachments-img" multiple accept="image/*" onchange="handleAttachmentPick(event)" style="display:none">
         <div class="attach-list" id="attachment-list">未添加附件</div>
       </div>
     </div>
@@ -255,6 +258,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
 // ═══════════════════════════════════════════════════════
 let DATA = null;  // { products:{}, fc_weekly:{}, updated:"" }
 let RESULTS = []; // [{art, product, fcResult}]
+let ATTACHMENTS = [];
 
 // ── findProduct: tries all common paddings ──
 function findProduct(artRaw) {
@@ -634,16 +638,27 @@ function applyRemarkFilter() {
 }
 
 function renderAttachmentList() {
-  const input = document.getElementById('f-attachments');
   const box = document.getElementById('attachment-list');
-  const files = input && input.files ? Array.from(input.files) : [];
-  if (!files.length) {
+  if (!ATTACHMENTS.length) {
     box.textContent = '未添加附件';
     return;
   }
-  box.innerHTML = files.map(file =>
+  box.innerHTML = ATTACHMENTS.map(file =>
     `<div class="attach-item">📎 ${file.name} <span style="color:#888">(${Math.max(1, Math.round(file.size / 1024))} KB)</span></div>`
   ).join('');
+}
+
+function handleAttachmentPick(event) {
+  const input = event.target;
+  const files = input && input.files ? Array.from(input.files) : [];
+  for (const file of files) {
+    const key = `${file.name}__${file.size}__${file.lastModified}`;
+    if (!ATTACHMENTS.some(existing => `${existing.name}__${existing.size}__${existing.lastModified}` === key)) {
+      ATTACHMENTS.push(file);
+    }
+  }
+  if (input) input.value = '';
+  renderAttachmentList();
 }
 
 function fileToDataUrl(file) {
@@ -778,15 +793,13 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
 async function submitRequest() {
   const company = document.getElementById('f-company').value.trim();
   const reqdate = document.getElementById('f-reqdate').value.trim();
-  const attachmentInput = document.getElementById('f-attachments');
   if (!company) { alert('请填写客户公司名称'); return; }
   if (!reqdate) { alert('请填写需求时间'); return; }
   if (!getCheckedValues('submit-remark-filter').length) { alert('请至少勾选一个提交Remark筛选'); return; }
 
   const items = getSubmitItems();
   if (!items.length) { alert('当前提交Remark筛选下，没有可发送的货号'); return; }
-  const attachments = attachmentInput && attachmentInput.files ? Array.from(attachmentInput.files) : [];
-  const attachmentPayload = attachments.length ? await Promise.all(attachments.map(fileToDataUrl)) : [];
+  const attachmentPayload = ATTACHMENTS.length ? await Promise.all(ATTACHMENTS.map(fileToDataUrl)) : [];
 
   const now = new Date();
   const dateStr = now.toLocaleString('zh-CN', { hour12: false });
@@ -911,7 +924,9 @@ function clearAll() {
   document.getElementById('result-card').style.display = 'none';
   document.getElementById('result-body').innerHTML = '';
   document.getElementById('submit-confirm').innerHTML = '';
-  document.getElementById('f-attachments').value = '';
+  ATTACHMENTS = [];
+  document.getElementById('f-attachments-doc').value = '';
+  document.getElementById('f-attachments-img').value = '';
   renderAttachmentList();
   RESULTS = [];
   stopScanner();
