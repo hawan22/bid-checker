@@ -519,11 +519,31 @@ function dedupeItems(items) {
   return Array.from(merged.values());
 }
 
+function collectNeighborQtyLines(lines, startIndex, options = {}) {
+  if (!options.combineQtyAcrossLines) return [];
+  const extraParts = [];
+  for (let j = startIndex + 1; j < Math.min(startIndex + 4, lines.length); j++) {
+    const nextLine = lines[j];
+    if (hasArticleCandidate(nextLine)) break;
+    if (isLikelyQtyOnlyLine(nextLine)) {
+      extraParts.push(nextLine);
+      continue;
+    }
+    if (!extraParts.length && /\d/.test(nextLine)) {
+      extraParts.push(nextLine);
+    }
+    break;
+  }
+  return extraParts;
+}
+
 function parseInput(raw, options = {}) {
   const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l);
   const items = [];
-  for (const line of lines) {
-    const item = pickItemFromParts([line], options);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const extraParts = collectNeighborQtyLines(lines, i, options);
+    const item = pickItemFromParts([line, ...extraParts], options);
     if (item) items.push(item);
   }
   return dedupeItems(items);
@@ -577,24 +597,15 @@ async function parseImageAttachment(file) {
   const lineItems = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const extraParts = [];
-    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-      const nextLine = lines[j];
-      if (hasArticleCandidate(nextLine)) break;
-      if (isLikelyQtyOnlyLine(nextLine)) {
-        extraParts.push(nextLine);
-        continue;
-      }
-      if (!extraParts.length && /\d/.test(nextLine)) {
-        extraParts.push(nextLine);
-      }
-      break;
-    }
+    const extraParts = collectNeighborQtyLines(lines, i, { combineQtyAcrossLines: true });
     const item = pickItemFromParts([line, ...extraParts], { combineSplitQty: true });
     if (item) lineItems.push(item);
   }
   if (lineItems.length) return dedupeItems(lineItems);
-  return parseInput(result && result.data ? result.data.text || '' : '', { combineSplitQty: true });
+  return parseInput(result && result.data ? result.data.text || '' : '', {
+    combineSplitQty: true,
+    combineQtyAcrossLines: true,
+  });
 }
 
 async function extractItemsFromAttachment(file) {
