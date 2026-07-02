@@ -452,7 +452,37 @@ function addArticle(artno) {
 // ═══════════════════════════════════════════════════════
 // Search
 // ═══════════════════════════════════════════════════════
-function pickItemFromParts(parts) {
+function extractQtyFromTokens(tokens, chosenIndex, options = {}) {
+  const qtyTokens = [];
+  for (let i = chosenIndex + 1; i < tokens.length; i++) {
+    const raw = String(tokens[i].raw || '').trim();
+    if (!raw) continue;
+    const qv = parseFloat(raw);
+    if (!isNaN(qv) && qv > 0 && qv < 1000000) {
+      qtyTokens.push(raw);
+    }
+  }
+  if (!qtyTokens.length) return null;
+
+  if (options.combineSplitQty) {
+    const first = qtyTokens[0];
+    const second = qtyTokens[1];
+    if (/^\d$/.test(first) && /^\d$/.test(second || '')) {
+      let merged = first;
+      for (let i = 1; i < qtyTokens.length; i++) {
+        if (!/^\d$/.test(qtyTokens[i]) || merged.length >= 4) break;
+        merged += qtyTokens[i];
+      }
+      const mergedQty = parseInt(merged, 10);
+      if (!isNaN(mergedQty) && mergedQty > 0) return mergedQty;
+    }
+  }
+
+  const qty = parseFloat(qtyTokens[0]);
+  return !isNaN(qty) && qty > 0 ? qty : null;
+}
+
+function pickItemFromParts(parts, options = {}) {
   const tokens = [];
   for (const part of parts || []) {
     const text = String(part == null ? '' : part).trim();
@@ -470,15 +500,8 @@ function pickItemFromParts(parts) {
     artCandidates.find(token => token.raw.length === 8) ||
     artCandidates[0];
 
-  let qty = null;
   const chosenIndex = tokens.indexOf(chosen);
-  for (let i = chosenIndex + 1; i < tokens.length; i++) {
-    const qv = parseFloat(tokens[i].raw);
-    if (!isNaN(qv) && qv > 0 && qv < 1000000) {
-      qty = qv;
-      break;
-    }
-  }
+  const qty = extractQtyFromTokens(tokens, chosenIndex, options);
   return { art: chosen.art, qty };
 }
 
@@ -496,11 +519,11 @@ function dedupeItems(items) {
   return Array.from(merged.values());
 }
 
-function parseInput(raw) {
+function parseInput(raw, options = {}) {
   const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l);
   const items = [];
   for (const line of lines) {
-    const item = pickItemFromParts([line]);
+    const item = pickItemFromParts([line], options);
     if (item) items.push(item);
   }
   return dedupeItems(items);
@@ -535,7 +558,16 @@ async function parseTextAttachment(file) {
 
 async function parseImageAttachment(file) {
   const result = await Tesseract.recognize(file, 'eng');
-  return parseInput(result && result.data ? result.data.text || '' : '');
+  const lines = result && result.data && Array.isArray(result.data.lines)
+    ? result.data.lines.map(line => line.text || '').filter(Boolean)
+    : [];
+  const lineItems = [];
+  for (const line of lines) {
+    const item = pickItemFromParts([line], { combineSplitQty: true });
+    if (item) lineItems.push(item);
+  }
+  if (lineItems.length) return dedupeItems(lineItems);
+  return parseInput(result && result.data ? result.data.text || '' : '', { combineSplitQty: true });
 }
 
 async function extractItemsFromAttachment(file) {
