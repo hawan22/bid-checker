@@ -161,6 +161,13 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
       <div id="reader"></div>
       <button class="btn btn-red btn-sm" style="margin-top:10px" onclick="stopScanner()">■ 停止扫码</button>
     </div>
+    <div class="fg full" style="margin-top:14px">
+      <label>添加附件 / 添加截图</label>
+      <div class="attach-box">
+        <input type="file" id="f-attachments" multiple accept="image/*,.pdf,.xlsx,.xls,.csv,.txt" onchange="renderAttachmentList()">
+        <div class="attach-list" id="attachment-list">未添加附件</div>
+      </div>
+    </div>
   </div>
 
   <!-- 结果区 -->
@@ -221,13 +228,6 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
           <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="换产品" checked>换产品</label>
           <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="额外订货" checked>额外订货</label>
           <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="直接拿货" checked>直接拿货</label>
-        </div>
-      </div>
-      <div class="fg full">
-        <label>添加附件 / 添加截图</label>
-        <div class="attach-box">
-          <input type="file" id="f-attachments" multiple accept="image/*,.pdf,.xlsx,.xls,.csv,.txt" onchange="renderAttachmentList()">
-          <div class="attach-list" id="attachment-list">未添加附件</div>
         </div>
       </div>
     </div>
