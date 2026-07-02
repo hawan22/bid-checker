@@ -93,6 +93,14 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
 .fg input,.fg textarea{width:100%;padding:9px 12px;border:2px solid #ddd;border-radius:7px;font-size:14px;transition:border .2s}
 .fg input:focus,.fg textarea:focus{outline:none;border-color:#0058A3}
 .fg.full{grid-column:1/-1}
+.filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+.filter-label{font-size:13px;font-weight:700;color:#555}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid #ddd;border-radius:999px;background:#fff;font-size:13px;cursor:pointer;user-select:none}
+.filter-chip input{margin:0}
+.attach-box{background:#F9FAFB;border:1px dashed #C5D3E8;border-radius:8px;padding:12px}
+.attach-list{margin-top:8px;font-size:12px;color:#555}
+.attach-item{padding:4px 0;border-bottom:1px solid #eee}
+.attach-item:last-child{border-bottom:none}
 .submit-items{background:#F9FAFB;border-radius:8px;padding:12px;font-size:13px;max-height:180px;overflow-y:auto;margin:8px 0}
 .submit-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee}
 .submit-item:last-child{border-bottom:none}
@@ -159,15 +167,12 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
   <div class="card" id="result-card" style="display:none">
     <div class="card-title">📊 产品信息</div>
     <div class="alert alert-info" id="fc-note"></div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px">
-      <label for="remark-filter" style="font-size:13px;font-weight:700;color:#555">Remark筛选</label>
-      <select id="remark-filter" onchange="applyRemarkFilter()" style="padding:7px 10px;border:2px solid #ddd;border-radius:6px;font-size:13px;background:#fff">
-        <option value="all">全部</option>
-        <option value="咨询SO">咨询SO</option>
-        <option value="换产品">换产品</option>
-        <option value="额外订货">额外订货</option>
-        <option value="直接拿货">直接拿货</option>
-      </select>
+    <div class="filter-wrap">
+      <div class="filter-label">Remark筛选</div>
+      <label class="filter-chip"><input type="checkbox" class="remark-filter" value="咨询SO" checked onchange="applyRemarkFilter()">咨询SO</label>
+      <label class="filter-chip"><input type="checkbox" class="remark-filter" value="换产品" checked onchange="applyRemarkFilter()">换产品</label>
+      <label class="filter-chip"><input type="checkbox" class="remark-filter" value="额外订货" checked onchange="applyRemarkFilter()">额外订货</label>
+      <label class="filter-chip"><input type="checkbox" class="remark-filter" value="直接拿货" checked onchange="applyRemarkFilter()">直接拿货</label>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -208,6 +213,22 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
       <div class="fg full">
         <label>备注（如项目背景、配送要求等）</label>
         <textarea id="f-notes" rows="2" placeholder="可选"></textarea>
+      </div>
+      <div class="fg full">
+        <label>提交Remark筛选 *</label>
+        <div class="filter-wrap" style="margin:0">
+          <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="咨询SO" checked>咨询SO</label>
+          <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="换产品" checked>换产品</label>
+          <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="额外订货" checked>额外订货</label>
+          <label class="filter-chip"><input type="checkbox" class="submit-remark-filter" value="直接拿货" checked>直接拿货</label>
+        </div>
+      </div>
+      <div class="fg full">
+        <label>添加附件 / 添加截图</label>
+        <div class="attach-box">
+          <input type="file" id="f-attachments" multiple accept="image/*,.pdf,.xlsx,.xls,.csv,.txt" onchange="renderAttachmentList()">
+          <div class="attach-list" id="attachment-list">未添加附件</div>
+        </div>
       </div>
     </div>
     <button class="btn btn-blue" style="margin-top:14px;width:100%;max-width:220px" onclick="submitRequest()">
@@ -357,6 +378,10 @@ function parseProductDate(raw) {
   const dt = new Date(y, m - 1, d);
   dt.setHours(0, 0, 0, 0);
   return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function getCheckedValues(className) {
+  return Array.from(document.querySelectorAll(`.${className}:checked`)).map(el => el.value);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -516,7 +541,7 @@ function doSearch() {
   });
 
   document.getElementById('result-card').style.display = 'block';
-  document.getElementById('remark-filter').value = 'all';
+  document.querySelectorAll('.remark-filter').forEach(el => el.checked = true);
   applyRemarkFilter();
   document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
 }
@@ -595,16 +620,43 @@ function updateAutoDeliveryDate() {
 }
 
 function applyRemarkFilter() {
-  const filter = document.getElementById('remark-filter')?.value || 'all';
+  const filters = getCheckedValues('remark-filter');
   document.querySelectorAll('#result-body tr').forEach(tr => {
-    if (filter === 'all') {
+    if (!filters.length) {
       tr.style.display = '';
       return;
     }
     const art = tr.dataset.art;
     const rmkCell = art ? document.getElementById('rmk-' + art) : null;
     const remark = rmkCell ? rmkCell.textContent.trim() : '';
-    tr.style.display = remark.includes(filter) ? '' : 'none';
+    tr.style.display = filters.some(filter => remark.includes(filter)) ? '' : 'none';
+  });
+}
+
+function renderAttachmentList() {
+  const input = document.getElementById('f-attachments');
+  const box = document.getElementById('attachment-list');
+  const files = input && input.files ? Array.from(input.files) : [];
+  if (!files.length) {
+    box.textContent = '未添加附件';
+    return;
+  }
+  box.innerHTML = files.map(file =>
+    `<div class="attach-item">📎 ${file.name} <span style="color:#888">(${Math.max(1, Math.round(file.size / 1024))} KB)</span></div>`
+  ).join('');
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      mime_type: file.type || 'application/octet-stream',
+      data_url: reader.result,
+      size: file.size || 0,
+    });
+    reader.onerror = () => reject(reader.error || new Error('读取附件失败'));
+    reader.readAsDataURL(file);
   });
 }
 
@@ -639,6 +691,7 @@ function onQtyChange(input) {
 }
 
 function getSubmitItems() {
+  const submitFilters = getCheckedValues('submit-remark-filter');
   const items = [];
   document.querySelectorAll('.qty-input').forEach(inp => {
     const qty = parseFloat(inp.value);
@@ -657,6 +710,7 @@ function getSubmitItems() {
     const ews  = prod && prod.ews != null ? (Math.round(prod.ews*10)/10) : '—';
     const rmkCell = document.getElementById('rmk-' + art);
     const remark = rmkCell ? rmkCell.textContent.trim() : '';
+    if (submitFilters.length && !submitFilters.some(filter => remark.includes(filter))) return;
     const fccCell = document.getElementById('fcc-' + art);
     const fcCompare = fccCell ? fccCell.textContent.trim() : '';
     items.push({ art, name, hfb, qty, fc, ava, inway, nxdate, lt, aws, ews, remark, fcCompare });
@@ -724,11 +778,15 @@ function buildEmailHtml(company, reqdateCN, items, notes, dateStr) {
 async function submitRequest() {
   const company = document.getElementById('f-company').value.trim();
   const reqdate = document.getElementById('f-reqdate').value.trim();
+  const attachmentInput = document.getElementById('f-attachments');
   if (!company) { alert('请填写客户公司名称'); return; }
   if (!reqdate) { alert('请填写需求时间'); return; }
+  if (!getCheckedValues('submit-remark-filter').length) { alert('请至少勾选一个提交Remark筛选'); return; }
 
   const items = getSubmitItems();
-  if (!items.length) { alert('请至少为一个货号填写需求数量'); return; }
+  if (!items.length) { alert('当前提交Remark筛选下，没有可发送的货号'); return; }
+  const attachments = attachmentInput && attachmentInput.files ? Array.from(attachmentInput.files) : [];
+  const attachmentPayload = attachments.length ? await Promise.all(attachments.map(fileToDataUrl)) : [];
 
   const now = new Date();
   const dateStr = now.toLocaleString('zh-CN', { hour12: false });
@@ -760,7 +818,9 @@ async function submitRequest() {
         reqdate: reqdateCN,
         notes,
         item_count: items.length,
-        requester: 'IB list 页面'
+        requester: 'IB list 页面',
+        remark_filters: getCheckedValues('submit-remark-filter'),
+        attachments: attachmentPayload
       }),
       signal: ctrl.signal,
     });
@@ -850,8 +910,9 @@ function clearAll() {
   document.getElementById('article-input').value = '';
   document.getElementById('result-card').style.display = 'none';
   document.getElementById('result-body').innerHTML = '';
-  document.getElementById('warn-box').innerHTML = '';
   document.getElementById('submit-confirm').innerHTML = '';
+  document.getElementById('f-attachments').value = '';
+  renderAttachmentList();
   RESULTS = [];
   stopScanner();
 }
@@ -880,9 +941,3 @@ initQR();
 </script>
 </body>
 </html>
-
-
-
-
-
-
