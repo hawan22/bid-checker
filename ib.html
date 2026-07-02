@@ -505,7 +505,7 @@ function pickItemFromParts(parts, options = {}) {
   return { art: chosen.art, qty };
 }
 
-function dedupeItems(items) {
+function dedupeItems(items, options = {}) {
   const merged = new Map();
   for (const item of items) {
     if (!item || !item.art) continue;
@@ -514,7 +514,13 @@ function dedupeItems(items) {
       merged.set(item.art, { art: item.art, qty: item.qty != null ? item.qty : null });
       continue;
     }
-    if (existing.qty == null && item.qty != null) existing.qty = item.qty;
+    if (existing.qty == null && item.qty != null) {
+      existing.qty = item.qty;
+      continue;
+    }
+    if (options.preferLargestQty && item.qty != null && (existing.qty == null || item.qty > existing.qty)) {
+      existing.qty = item.qty;
+    }
   }
   return Array.from(merged.values());
 }
@@ -601,11 +607,11 @@ async function parseImageAttachment(file) {
     const item = pickItemFromParts([line, ...extraParts], { combineSplitQty: true });
     if (item) lineItems.push(item);
   }
-  if (lineItems.length) return dedupeItems(lineItems);
-  return parseInput(result && result.data ? result.data.text || '' : '', {
+  if (lineItems.length) return dedupeItems(lineItems, { preferLargestQty: true });
+  return dedupeItems(parseInput(result && result.data ? result.data.text || '' : '', {
     combineSplitQty: true,
     combineQtyAcrossLines: true,
-  });
+  }), { preferLargestQty: true });
 }
 
 async function extractItemsFromAttachment(file) {
@@ -648,7 +654,7 @@ async function collectAttachmentItems() {
     }
   }
   return {
-    items: dedupeItems(items),
+    items: dedupeItems(items, { preferLargestQty: true }),
     unsupported,
     failed,
     empty,
@@ -674,7 +680,7 @@ async function doSearch() {
   try {
     if (ATTACHMENTS.length) {
       attachmentSummary = await collectAttachmentItems();
-      items = dedupeItems([...items, ...attachmentSummary.items]);
+      items = dedupeItems([...items, ...attachmentSummary.items], { preferLargestQty: true });
       if (attachmentSummary.items.length) {
         inputEl.value = formatItemsForTextarea(items);
       }
