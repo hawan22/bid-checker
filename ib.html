@@ -10,6 +10,8 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f4f4;color:#111;min-height:100vh}
@@ -153,7 +155,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
     <div class="input-wrap">
       <textarea id="article-input" placeholder="输入货号，支持批量（每行一个）&#10;支持「货号 数量」两列格式，数量自动填入&#10;例如：&#10;80415595    5&#10;40387486    6&#10;60503296"></textarea>
       <div class="btn-col">
-        <button class="btn btn-blue" onclick="doSearch()">🔍 查询</button>
+        <button class="btn btn-blue" id="search-btn" onclick="doSearch()">🔍 查询</button>
         <button class="btn btn-green" id="scan-btn" onclick="toggleScanner()">📷 扫码</button>
         <button class="btn btn-blue btn-sm" onclick="document.getElementById('f-attachments-doc').click()">📎 添加附件</button>
         <button class="btn btn-green btn-sm" onclick="document.getElementById('f-attachments-img').click()">🖼️ 添加截图</button>
@@ -255,6 +257,7 @@ tbody td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #d0d8e8;
 let DATA = null;  // { products:{}, fc_weekly:{}, updated:"" }
 let RESULTS = []; // [{art, product, fcResult}]
 let ATTACHMENTS = [];
+let ATTACHMENT_PARSE_CACHE = new Map();
 
 // ── findProduct: tries all common paddings ──
 function findProduct(artRaw) {
@@ -269,6 +272,23 @@ function findProduct(artRaw) {
   return null;
 }
 let scanner = null;
+
+function fileCacheKey(file) {
+  return `${file.name}__${file.size}__${file.lastModified}`;
+}
+
+function normalizeArtToken(token) {
+  const digits = String(token || '').replace(/\D/g, '');
+  if (digits.length < 4 || digits.length > 10) return null;
+  return digits.padStart(8, '0');
+}
+
+function buildReadyStatusText(useCache) {
+  const n = Object.keys((DATA && DATA.products) || {}).length;
+  return useCache
+    ? `⚠️ 网络失败，使用缓存 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`
+    : `数据已就绪 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`;
+}
 
 // ═══════════════════════════════════════════════════════
 // Load data
@@ -287,8 +307,7 @@ async function loadData(forceRefresh) {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           DATA = JSON.parse(cached);
-          const n = Object.keys(DATA.products || {}).length;
-          setStatus('ok', `数据已就绪 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'} （缓存）`);
+          setStatus('ok', `${buildReadyStatusText(false)} （缓存）`);
           return;
         }
       }
@@ -301,16 +320,14 @@ async function loadData(forceRefresh) {
       localStorage.setItem(CACHE_KEY, JSON.stringify(DATA));
       localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
     } catch(e) { /* storage full, ignore */ }
-    const n = Object.keys(DATA.products || {}).length;
-    setStatus('ok', `数据已就绪 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`);
+    setStatus('ok', buildReadyStatusText(false));
   } catch (e) {
     // Try stale cache as fallback
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         DATA = JSON.parse(cached);
-        const n = Object.keys(DATA.products || {}).length;
-        setStatus('ok', `⚠️ 网络失败，使用缓存 · ${n} 个产品 · 更新于 ${DATA.updated || '未知'}`);
+        setStatus('ok', buildReadyStatusText(true));
         return;
       }
     } catch(e2) {}
@@ -435,38 +452,177 @@ function addArticle(artno) {
 // ═══════════════════════════════════════════════════════
 // Search
 // ═══════════════════════════════════════════════════════
+function pickItemFromParts(parts) {
+  const tokens = [];
+  for (const part of parts || []) {
+    const text = String(part == null ? '' : part).trim();
+    if (!text) continue;
+    const matches = text.match(/\d+(?:\.\d+)?/g) || [];
+    for (const raw of matches) {
+      tokens.push({ raw, art: normalizeArtToken(raw) });
+    }
+  }
+  const artCandidates = tokens.filter(token => token.art);
+  if (!artCandidates.length) return null;
+
+  const chosen =
+    artCandidates.find(token => findProduct(token.art)) ||
+    artCandidates.find(token => token.raw.length === 8) ||
+    artCandidates[0];
+
+  let qty = null;
+  const chosenIndex = tokens.indexOf(chosen);
+  for (let i = chosenIndex + 1; i < tokens.length; i++) {
+    const qv = parseFloat(tokens[i].raw);
+    if (!isNaN(qv) && qv > 0 && qv < 1000000) {
+      qty = qv;
+      break;
+    }
+  }
+  return { art: chosen.art, qty };
+}
+
+function dedupeItems(items) {
+  const merged = new Map();
+  for (const item of items) {
+    if (!item || !item.art) continue;
+    const existing = merged.get(item.art);
+    if (!existing) {
+      merged.set(item.art, { art: item.art, qty: item.qty != null ? item.qty : null });
+      continue;
+    }
+    if (existing.qty == null && item.qty != null) existing.qty = item.qty;
+  }
+  return Array.from(merged.values());
+}
+
 function parseInput(raw) {
-  // Extracts first number (7-10 digits = article) and optional second number (qty)
-  // Handles any separator: single/multiple spaces, tab, comma, slash, etc.
   const lines = raw.split(/\n/).map(l => l.trim()).filter(l => l);
-  const seen = new Set();
   const items = [];
   for (const line of lines) {
-    const nums = line.match(/\d+/g) || [];
-    if (!nums.length) continue;
-    // First number sequence with 6-10 digits = article number
-    const artRaw = nums[0];
-    if (artRaw.length < 4 || artRaw.length > 10) continue;
-    const art = artRaw.padStart(8, '0');
-    if (art.length !== 8 || seen.has(art)) continue;
-    seen.add(art);
-    // Second number = quantity (if present and reasonable value < 1,000,000)
-    let qty = null;
-    if (nums.length > 1) {
-      const qv = parseFloat(nums[1]);
-      if (!isNaN(qv) && qv > 0 && qv < 1000000) qty = qv;
-    }
-    items.push({ art, qty });
+    const item = pickItemFromParts([line]);
+    if (item) items.push(item);
   }
+  return dedupeItems(items);
+}
+
+function formatItemsForTextarea(items) {
+  return items.map(({ art, qty }) => qty != null ? `${art}\t${qty}` : art).join('\n');
+}
+
+function isQueryableAttachment(file) {
+  const lower = file.name.toLowerCase();
+  return file.type.startsWith('image/') || /\.(xlsx|xls|csv|txt)$/i.test(lower);
+}
+
+async function parseWorkbookAttachment(file) {
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, { type: 'array' });
+  const items = [];
+  for (const sheetName of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: false, defval: '' });
+    for (const row of rows) {
+      const item = pickItemFromParts(Array.isArray(row) ? row : [row]);
+      if (item) items.push(item);
+    }
+  }
+  return dedupeItems(items);
+}
+
+async function parseTextAttachment(file) {
+  return parseInput(await file.text());
+}
+
+async function parseImageAttachment(file) {
+  const result = await Tesseract.recognize(file, 'eng');
+  return parseInput(result && result.data ? result.data.text || '' : '');
+}
+
+async function extractItemsFromAttachment(file) {
+  const key = fileCacheKey(file);
+  if (ATTACHMENT_PARSE_CACHE.has(key)) return ATTACHMENT_PARSE_CACHE.get(key);
+
+  const lower = file.name.toLowerCase();
+  let items = [];
+  if (file.type.startsWith('image/')) {
+    items = await parseImageAttachment(file);
+  } else if (/\.(xlsx|xls|csv)$/i.test(lower)) {
+    items = await parseWorkbookAttachment(file);
+  } else if (/\.txt$/i.test(lower)) {
+    items = await parseTextAttachment(file);
+  }
+  ATTACHMENT_PARSE_CACHE.set(key, items);
   return items;
 }
 
-function doSearch() {
-  const raw = document.getElementById('article-input').value.trim();
-  if (!raw) { alert('请输入货号'); return; }
+async function collectAttachmentItems() {
+  const items = [];
+  const unsupported = [];
+  const failed = [];
+  const empty = [];
 
-  const items = parseInput(raw);
-  if (!items.length) { alert('未识别到有效货号（4-10位数字）'); return; }
+  for (const file of ATTACHMENTS) {
+    if (!isQueryableAttachment(file)) {
+      unsupported.push(file.name);
+      continue;
+    }
+    try {
+      const parsed = await extractItemsFromAttachment(file);
+      if (parsed.length) {
+        items.push(...parsed);
+      } else {
+        empty.push(file.name);
+      }
+    } catch (e) {
+      failed.push(file.name);
+    }
+  }
+  return {
+    items: dedupeItems(items),
+    unsupported,
+    failed,
+    empty,
+  };
+}
+
+async function doSearch() {
+  const inputEl = document.getElementById('article-input');
+  const searchBtn = document.getElementById('search-btn');
+  const raw = inputEl.value.trim();
+
+  if (!raw && !ATTACHMENTS.length) {
+    alert('请输入货号，或添加附件/截图后再查询');
+    return;
+  }
+
+  const originalBtnText = searchBtn.textContent;
+  searchBtn.disabled = true;
+  searchBtn.textContent = ATTACHMENTS.length ? '识别中…' : '查询中…';
+
+  let items = parseInput(raw);
+  let attachmentSummary = null;
+  try {
+    if (ATTACHMENTS.length) {
+      attachmentSummary = await collectAttachmentItems();
+      items = dedupeItems([...items, ...attachmentSummary.items]);
+      if (attachmentSummary.items.length) {
+        inputEl.value = formatItemsForTextarea(items);
+      }
+    }
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = originalBtnText;
+    if (DATA) setStatus('ok', buildReadyStatusText(false));
+  }
+
+  if (!items.length) {
+    if (attachmentSummary && (attachmentSummary.failed.length || attachmentSummary.empty.length || attachmentSummary.unsupported.length)) {
+      alert('附件里没识别到有效货号。当前仅支持 Excel / CSV / TXT / 图片识别，请确认文件内容里有清晰的货号。');
+    } else {
+      alert('未识别到有效货号（4-10位数字）');
+    }
+    return;
+  }
 
   stopScanner();
 
@@ -651,7 +807,7 @@ function handleAttachmentPick(event) {
   const input = event.target;
   const files = input && input.files ? Array.from(input.files) : [];
   for (const file of files) {
-    const key = `${file.name}__${file.size}__${file.lastModified}`;
+    const key = fileCacheKey(file);
     if (!ATTACHMENTS.some(existing => `${existing.name}__${existing.size}__${existing.lastModified}` === key)) {
       ATTACHMENTS.push(file);
     }
@@ -924,6 +1080,7 @@ function clearAll() {
   document.getElementById('result-body').innerHTML = '';
   document.getElementById('submit-confirm').innerHTML = '';
   ATTACHMENTS = [];
+  ATTACHMENT_PARSE_CACHE = new Map();
   document.getElementById('f-attachments-doc').value = '';
   document.getElementById('f-attachments-img').value = '';
   renderAttachmentList();
