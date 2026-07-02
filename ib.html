@@ -511,6 +511,7 @@ function calcRemark(prod, qty, fc) {
   const ewsLT  = ews * lt;
   const monthlyFC = fc ? fc.total : null;
   const exceedsFC = monthlyFC && qty > monthlyFC * 1.1;
+  const cnRate = monthlyFC && monthlyFC > 0 ? qty / monthlyFC : null;
 
   if (exceedsFC) {
     if (ava < qty) {
@@ -526,7 +527,9 @@ function calcRemark(prod, qty, fc) {
         ? '<span style="color:#00853E;font-weight:700">✅ 直接拿货</span>'
         : '<span style="color:#0058A3;font-weight:700">⏳ 等到货</span>';
     } else {
-      return '<span style="color:#7A0096;font-weight:700">📦 额外订货</span>';
+      return cnRate !== null && cnRate < 0.1
+        ? '<span style="color:#7A0096;font-weight:700">📦 额外订货</span>'
+        : '<span style="color:#E00751;font-weight:700">⚠️ 咨询SO</span>';
     }
   }
 }
@@ -730,6 +733,7 @@ async function submitRequest() {
   // ── 优先尝试本地 API（IB Email Server on localhost:5003）──
   let localSendOk = false;
   let localError = '';
+  let localResult = null;
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 8000);
@@ -737,22 +741,33 @@ async function submitRequest() {
       method: 'POST',
       mode: 'cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, html_body: htmlBody }),
+      body: JSON.stringify({
+        subject,
+        html_body: htmlBody,
+        company,
+        reqdate: reqdateCN,
+        notes,
+        item_count: items.length,
+        requester: 'IB list 页面'
+      }),
       signal: ctrl.signal,
     });
     clearTimeout(tid);
-    const result = await resp.json();
-    if (resp.ok && result.status === 'ok') {
+    localResult = await resp.json();
+    if (resp.ok && localResult.status === 'ok') {
       localSendOk = true;
     } else {
-      localError = result.message || '本地服务返回错误';
+      localError = localResult.message || '本地服务返回错误';
     }
   } catch (e) {
     localError = e.message || String(e);
   }
 
   if (localSendOk) {
-    confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com</div>`;
+    const botTip = localResult && localResult.wecom_bot_sent
+      ? '<br>🤖 企业微信群机器人也已同步提醒'
+      : '';
+    confirmEl.innerHTML = `<div class="alert alert-ok">✅ 邮件已直接发送至 hattie.wang@ingka.ikea.com${botTip}</div>`;
     return;
   }
 
@@ -853,9 +868,6 @@ initQR();
 </script>
 </body>
 </html>
-
-
-
 
 
 
