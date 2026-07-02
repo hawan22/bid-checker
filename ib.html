@@ -533,6 +533,19 @@ function formatItemsForTextarea(items) {
   return items.map(({ art, qty }) => qty != null ? `${art}\t${qty}` : art).join('\n');
 }
 
+function hasArticleCandidate(text) {
+  const nums = String(text || '').match(/\d+/g) || [];
+  return nums.some(token => !!normalizeArtToken(token));
+}
+
+function isLikelyQtyOnlyLine(text) {
+  const nums = String(text || '').match(/\d+/g) || [];
+  if (!nums.length) return false;
+  if (nums.some(token => !!normalizeArtToken(token))) return false;
+  const joined = nums.join('');
+  return joined.length <= 4;
+}
+
 function isQueryableAttachment(file) {
   const lower = file.name.toLowerCase();
   return file.type.startsWith('image/') || /\.(xlsx|xls|csv|txt)$/i.test(lower);
@@ -562,8 +575,22 @@ async function parseImageAttachment(file) {
     ? result.data.lines.map(line => line.text || '').filter(Boolean)
     : [];
   const lineItems = [];
-  for (const line of lines) {
-    const item = pickItemFromParts([line], { combineSplitQty: true });
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const extraParts = [];
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      const nextLine = lines[j];
+      if (hasArticleCandidate(nextLine)) break;
+      if (isLikelyQtyOnlyLine(nextLine)) {
+        extraParts.push(nextLine);
+        continue;
+      }
+      if (!extraParts.length && /\d/.test(nextLine)) {
+        extraParts.push(nextLine);
+      }
+      break;
+    }
+    const item = pickItemFromParts([line, ...extraParts], { combineSplitQty: true });
     if (item) lineItems.push(item);
   }
   if (lineItems.length) return dedupeItems(lineItems);
