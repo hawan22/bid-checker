@@ -457,6 +457,8 @@ function extractQtyFromTokens(tokens, chosenIndex, options = {}) {
   for (let i = chosenIndex + 1; i < tokens.length; i++) {
     const raw = String(tokens[i].raw || '').trim();
     if (!raw) continue;
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length >= 6) continue;
     const qv = parseFloat(raw);
     if (!isNaN(qv) && qv > 0 && qv < 1000000) {
       qtyTokens.push(raw);
@@ -506,6 +508,7 @@ function pickItemFromParts(parts, options = {}) {
 }
 
 function dedupeItems(items, options = {}) {
+  const strategy = options.mergeStrategy || 'first';
   const merged = new Map();
   for (const item of items) {
     if (!item || !item.art) continue;
@@ -518,7 +521,12 @@ function dedupeItems(items, options = {}) {
       existing.qty = item.qty;
       continue;
     }
-    if (options.preferLargestQty && item.qty != null && (existing.qty == null || item.qty > existing.qty)) {
+    if (item.qty == null) continue;
+    if (strategy === 'sum') {
+      existing.qty = (existing.qty != null ? existing.qty : 0) + item.qty;
+      continue;
+    }
+    if (strategy === 'max' && (existing.qty == null || item.qty > existing.qty)) {
       existing.qty = item.qty;
     }
   }
@@ -552,7 +560,7 @@ function parseInput(raw, options = {}) {
     const item = pickItemFromParts([line, ...extraParts], options);
     if (item) items.push(item);
   }
-  return dedupeItems(items);
+  return dedupeItems(items, { mergeStrategy: 'sum' });
 }
 
 function formatItemsForTextarea(items) {
@@ -588,15 +596,73 @@ async function parseWorkbookAttachment(file) {
       if (item) items.push(item);
     }
   }
-  return dedupeItems(items);
+  return dedupeItems(items, { mergeStrategy: 'sum' });
 }
 
 async function parseTextAttachment(file) {
-  return parseInput(await file.text());
+  return parseInput(await file.text(), { mergeStrategy: 'sum' });
+}
+
+function getWordBox(word) {
+  const box = word && word.bbox ? word.bbox : {};
+  const left = Number(box.x0 ?? box.left ?? 0);
+  const top = Number(box.y0 ?? box.top ?? 0);
+  const right = Number(box.x1 ?? box.right ?? left);
+  const bottom = Number(box.y1 ?? box.bottom ?? top);
+  return { left, top, right, bottom, height: Math.max(1, bottom - top) };
+}
+
+function parseImageRowsFromWords(words) {
+  const usable = (words || [])
+    .filter(word => /\d/.test(word && word.text ? word.text : ''))
+    .map(word => {
+      const box = getWordBox(word);
+      return {
+        text: String(word.text || '').trim(),
+        left: box.left,
+        top: box.top,
+        bottom: box.bottom,
+        height: box.height,
+        centerY: (box.top + box.bottom) / 2,
+      };
+    })
+    .filter(word => word.text);
+  if (!usable.length) return [];
+
+  usable.sort((a, b) => a.centerY - b.centerY || a.left - b.left);
+  const rows = [];
+  for (const word of usable) {
+    const threshold = Math.max(8, word.height * 0.8);
+    let row = null;
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (Math.abs(rows[i].centerY - word.centerY) <= threshold) {
+        row = rows[i];
+        break;
+      }
+    }
+    if (row) {
+      row.words.push(word);
+      row.centerY = (row.centerY * row.count + word.centerY) / (row.count + 1);
+      row.count += 1;
+    } else {
+      rows.push({ centerY: word.centerY, count: 1, words: [word] });
+    }
+  }
+
+  const items = [];
+  for (const row of rows) {
+    row.words.sort((a, b) => a.left - b.left);
+    const item = pickItemFromParts(row.words.map(word => word.text), { combineSplitQty: true });
+    if (item) items.push(item);
+  }
+  return items;
 }
 
 async function parseImageAttachment(file) {
   const result = await Tesseract.recognize(file, 'eng');
+  const wordItems = parseImageRowsFromWords(result && result.data ? result.data.words || [] : []);
+  if (wordItems.length) return dedupeItems(wordItems, { mergeStrategy: 'sum' });
+
   const lines = result && result.data && Array.isArray(result.data.lines)
     ? result.data.lines.map(line => line.text || '').filter(Boolean)
     : [];
@@ -607,11 +673,11 @@ async function parseImageAttachment(file) {
     const item = pickItemFromParts([line, ...extraParts], { combineSplitQty: true });
     if (item) lineItems.push(item);
   }
-  if (lineItems.length) return dedupeItems(lineItems, { preferLargestQty: true });
+  if (lineItems.length) return dedupeItems(lineItems, { mergeStrategy: 'sum' });
   return dedupeItems(parseInput(result && result.data ? result.data.text || '' : '', {
     combineSplitQty: true,
     combineQtyAcrossLines: true,
-  }), { preferLargestQty: true });
+  }), { mergeStrategy: 'sum' });
 }
 
 async function extractItemsFromAttachment(file) {
@@ -654,7 +720,7 @@ async function collectAttachmentItems() {
     }
   }
   return {
-    items: dedupeItems(items, { preferLargestQty: true }),
+    items: dedupeItems(items, { mergeStrategy: 'sum' }),
     unsupported,
     failed,
     empty,
@@ -680,7 +746,7 @@ async function doSearch() {
   try {
     if (ATTACHMENTS.length) {
       attachmentSummary = await collectAttachmentItems();
-      items = dedupeItems([...items, ...attachmentSummary.items], { preferLargestQty: true });
+      items = dedupeItems([...items, ...attachmentSummary.items], { mergeStrategy: 'sum' });
       if (attachmentSummary.items.length) {
         inputEl.value = formatItemsForTextarea(items);
       }
