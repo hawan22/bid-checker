@@ -339,6 +339,19 @@ function currentMonthFC(artno) {
   return count > 0 ? { total: Math.round(total), weeks: count } : null;
 }
 
+function parseProductDate(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '').slice(0, 8);
+  if (digits.length !== 8) return null;
+  const y = Number(digits.slice(0, 4));
+  const m = Number(digits.slice(4, 6));
+  const d = Number(digits.slice(6, 8));
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d);
+  dt.setHours(0, 0, 0, 0);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
 // ═══════════════════════════════════════════════════════
 // Scanner
 // ═══════════════════════════════════════════════════════
@@ -508,10 +521,19 @@ function calcRemark(prod, qty, fc) {
   const onway  = prod.in_transit != null ? prod.in_transit : 0;
   const ews    = prod.ews    != null ? prod.ews    : 0;
   const lt     = prod.lt     != null ? prod.lt     : 0;
+  const rto    = prod.rto    != null ? prod.rto    : 0;
   const ewsLT  = ews * lt;
   const monthlyFC = fc ? fc.total : null;
   const exceedsFC = monthlyFC && qty > monthlyFC * 1.1;
   const cnRate = monthlyFC && monthlyFC > 0 ? qty / monthlyFC : null;
+  const edsDate = parseProductDate(prod.eds);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isUtgNoSupply = edsDate && edsDate <= today && ava <= 0 && onway <= 0 && rto <= 0;
+
+  if (isUtgNoSupply) {
+    return '<span style="color:#7A5800;font-weight:700">🔄 换产品</span>';
+  }
 
   if (exceedsFC) {
     if (ava < qty) {
@@ -868,7 +890,6 @@ initQR();
 </script>
 </body>
 </html>
-
 
 
 
